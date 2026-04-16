@@ -3,6 +3,8 @@ import { useState } from "react";
 export default function Home() {
   const API_URL = process.env.NEXT_PUBLIC_API_URL;
 
+  const [step, setStep] = useState("form");
+
   const [form, setForm] = useState({
     age: 42,
     gender: "male",
@@ -64,6 +66,7 @@ export default function Home() {
 
       const data = await response.json();
       setResult(data);
+      setStep("result");
     } catch (err) {
       setError(`요청 실패: ${err.message}`);
     } finally {
@@ -71,53 +74,113 @@ export default function Home() {
     }
   };
 
+  const goToForm = () => {
+    setStep("form");
+  };
+
   const inputStyle = {
     width: "100%",
-    padding: "10px 12px",
-    borderRadius: 8,
+    padding: "12px 14px",
+    borderRadius: 10,
     border: "1px solid #ccc",
     marginTop: 6,
-    marginBottom: 14,
+    marginBottom: 16,
+    boxSizing: "border-box",
+  };
+
+  const cardStyle = {
+    maxWidth: 760,
+    margin: "0 auto",
+    border: "1px solid #e5e7eb",
+    borderRadius: 16,
+    padding: 20,
+    background: "#fff",
+  };
+
+  const buttonStyle = {
+    width: "100%",
+    padding: "14px 16px",
+    borderRadius: 10,
+    border: "none",
+    background: "#111827",
+    color: "#fff",
+    fontWeight: 700,
+    cursor: "pointer",
   };
 
   return (
-    <div style={{ maxWidth: 1280, margin: "0 auto", padding: 24 }}>
+    <div style={{ maxWidth: 900, margin: "0 auto", padding: 20 }}>
       <h1 style={{ marginBottom: 8 }}>AMBA 영양제 추천 앱</h1>
       <p style={{ color: "#555", marginBottom: 24 }}>
-        건강 정보를 입력하면 추천 영양소와 구매 링크를 보여줍니다.
+        건강 정보를 입력하면 맞춤 영양소와 구매 링크를 제공합니다.
       </p>
 
-      <div style={{ display: "grid", gridTemplateColumns: "1fr 1.2fr", gap: 24 }}>
-        <div style={{ border: "1px solid #e5e7eb", borderRadius: 16, padding: 20, background: "#fff" }}>
+      {step === "form" && (
+        <div style={cardStyle}>
           <h2 style={{ marginTop: 0 }}>건강 정보 입력</h2>
 
           <label>나이</label>
-          <input name="age" value={form.age} onChange={handleChange} style={inputStyle} />
+          <input
+            name="age"
+            value={form.age}
+            onChange={handleChange}
+            style={inputStyle}
+          />
 
           <label>성별</label>
-          <select name="gender" value={form.gender} onChange={handleChange} style={inputStyle}>
+          <select
+            name="gender"
+            value={form.gender}
+            onChange={handleChange}
+            style={inputStyle}
+          >
             <option value="male">남성</option>
             <option value="female">여성</option>
           </select>
 
           <label>키(cm)</label>
-          <input name="height_cm" value={form.height_cm} onChange={handleChange} style={inputStyle} />
+          <input
+            name="height_cm"
+            value={form.height_cm}
+            onChange={handleChange}
+            style={inputStyle}
+          />
 
           <label>몸무게(kg)</label>
-          <input name="weight_kg" value={form.weight_kg} onChange={handleChange} style={inputStyle} />
+          <input
+            name="weight_kg"
+            value={form.weight_kg}
+            onChange={handleChange}
+            style={inputStyle}
+          />
 
           <label>활동량</label>
-          <select name="activity" value={form.activity} onChange={handleChange} style={inputStyle}>
+          <select
+            name="activity"
+            value={form.activity}
+            onChange={handleChange}
+            style={inputStyle}
+          >
             <option value="low">낮음</option>
             <option value="medium">보통</option>
             <option value="high">높음</option>
           </select>
 
           <label>수면시간</label>
-          <input name="sleep" value={form.sleep} onChange={handleChange} style={inputStyle} />
+          <input
+            name="sleep"
+            value={form.sleep}
+            onChange={handleChange}
+            style={inputStyle}
+          />
 
           <label>식사 유형</label>
-          <select name="diet" value={form.diet} onChange={handleChange} style={inputStyle}>
+          <select
+            name="diet"
+            value={form.diet}
+            onChange={handleChange}
+            style={inputStyle}
+          >
             <option value="irregular">불규칙</option>
             <option value="regular">규칙적</option>
             <option value="vegetarian">채식 위주</option>
@@ -125,13 +188,28 @@ export default function Home() {
           </select>
 
           <label>질환 (쉼표 구분)</label>
-          <input name="conditions" value={form.conditions} onChange={handleChange} style={inputStyle} />
+          <input
+            name="conditions"
+            value={form.conditions}
+            onChange={handleChange}
+            style={inputStyle}
+          />
 
           <label>복용약 (쉼표 구분)</label>
-          <input name="medications" value={form.medications} onChange={handleChange} style={inputStyle} />
+          <input
+            name="medications"
+            value={form.medications}
+            onChange={handleChange}
+            style={inputStyle}
+          />
 
           <label>건강 목표</label>
-          <select name="goal" value={form.goal} onChange={handleChange} style={inputStyle}>
+          <select
+            name="goal"
+            value={form.goal}
+            onChange={handleChange}
+            style={inputStyle}
+          >
             <option value="피로 관리">피로 관리</option>
             <option value="면역 관리">면역 관리</option>
             <option value="수면 관리">수면 관리</option>
@@ -139,117 +217,148 @@ export default function Home() {
             <option value="운동 보조">운동 보조</option>
           </select>
 
-          <button
-            onClick={handleSubmit}
-            style={{
-              width: "100%",
-              padding: "12px 16px",
-              borderRadius: 10,
-              border: "none",
-              background: "#111827",
-              color: "#fff",
-              fontWeight: 700,
-              cursor: "pointer",
-            }}
-          >
-            분석하기
+          {error && (
+            <p style={{ color: "crimson", marginBottom: 16 }}>{error}</p>
+          )}
+
+          <button onClick={handleSubmit} style={buttonStyle} disabled={loading}>
+            {loading ? "분석 중..." : "분석하기"}
           </button>
         </div>
+      )}
 
-        <div style={{ border: "1px solid #e5e7eb", borderRadius: 16, padding: 20, background: "#fff" }}>
+      {step === "result" && result && (
+        <div style={cardStyle}>
           <h2 style={{ marginTop: 0 }}>분석 결과</h2>
 
-          {loading && <p>분석 중입니다...</p>}
-          {error && <p style={{ color: "crimson" }}>{error}</p>}
-          {!loading && !error && !result && <p>왼쪽에서 정보를 입력하고 분석하기를 눌러주세요.</p>}
+          <div
+            style={{
+              display: "grid",
+              gridTemplateColumns: "1fr 1fr",
+              gap: 12,
+              marginBottom: 20,
+            }}
+          >
+            <div
+              style={{
+                padding: 14,
+                borderRadius: 12,
+                background: "#f9fafb",
+              }}
+            >
+              <strong>BMI</strong>
+              <div style={{ marginTop: 6 }}>{result.bmi}</div>
+            </div>
 
-          {result && (
-            <div>
-              <div style={{ display: "flex", gap: 16, marginBottom: 20 }}>
-                <div style={{ flex: 1, padding: 12, borderRadius: 12, background: "#f9fafb" }}>
-                  <strong>BMI</strong>
-                  <div>{result.bmi}</div>
-                </div>
-                <div style={{ flex: 1, padding: 12, borderRadius: 12, background: "#f9fafb" }}>
-                  <strong>체형</strong>
-                  <div>{result.bmi_category}</div>
-                </div>
-              </div>
+            <div
+              style={{
+                padding: 14,
+                borderRadius: 12,
+                background: "#f9fafb",
+              }}
+            >
+              <strong>체형</strong>
+              <div style={{ marginTop: 6 }}>{result.bmi_category}</div>
+            </div>
+          </div>
 
-              {result.recommendations?.map((rec, idx) => (
-                <div
-                  key={idx}
-                  style={{
-                    border: "1px solid #e5e7eb",
-                    borderRadius: 16,
-                    padding: 16,
-                    marginBottom: 18,
-                    background: "#fafafa",
-                  }}
-                >
-                  <h3 style={{ marginTop: 0 }}>{rec.nutrient}</h3>
-                  <p><strong>추천 이유:</strong> {rec.reason}</p>
-                  <p><strong>식품:</strong> {rec.food_sources?.join(", ")}</p>
-                  <p><strong>주의:</strong> {rec.cautions?.join(", ")}</p>
+          {result.recommendations?.map((rec, idx) => (
+            <div
+              key={idx}
+              style={{
+                border: "1px solid #e5e7eb",
+                borderRadius: 14,
+                padding: 16,
+                marginBottom: 18,
+                background: "#fafafa",
+              }}
+            >
+              <h3 style={{ marginTop: 0 }}>{rec.nutrient}</h3>
+              <p>
+                <strong>추천 이유:</strong> {rec.reason}
+              </p>
+              <p>
+                <strong>식품:</strong> {rec.food_sources?.join(", ")}
+              </p>
+              <p>
+                <strong>주의:</strong> {rec.cautions?.join(", ")}
+              </p>
 
+              <div
+                style={{
+                  display: "grid",
+                  gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))",
+                  gap: 12,
+                  marginTop: 14,
+                }}
+              >
+                {rec.sample_products?.map((p, i) => (
                   <div
+                    key={i}
                     style={{
-                      display: "grid",
-                      gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))",
-                      gap: 12,
-                      marginTop: 14,
+                      border: "1px solid #ddd",
+                      borderRadius: 12,
+                      padding: 12,
+                      background: "#fff",
                     }}
                   >
-                    {rec.sample_products?.map((p, i) => (
-                      <div
-                        key={i}
-                        style={{
-                          border: "1px solid #ddd",
-                          borderRadius: 12,
-                          padding: 12,
-                          background: "#fff",
-                        }}
-                      >
-                        <img
-                          src={p.image_url}
-                          alt={p.title}
-                          style={{
-                            width: "100%",
-                            height: 140,
-                            objectFit: "contain",
-                            marginBottom: 10,
-                            background: "#fff",
-                          }}
-                        />
-                        <div style={{ fontWeight: 700, marginBottom: 6 }}>{p.title}</div>
-                        <div style={{ fontSize: 14, color: "#555", marginBottom: 6 }}>{p.mall_name}</div>
-                        <div style={{ fontWeight: 700, marginBottom: 10 }}>{p.price_krw}원</div>
-                        <a
-                          href={p.url}
-                          target="_blank"
-                          rel="noreferrer"
-                          style={{
-                            display: "inline-block",
-                            padding: "8px 12px",
-                            borderRadius: 8,
-                            background: "#111827",
-                            color: "#fff",
-                            textDecoration: "none",
-                          }}
-                        >
-                          구매 링크
-                        </a>
-                      </div>
-                    ))}
+                    <img
+                      src={p.image_url}
+                      alt={p.title}
+                      style={{
+                        width: "100%",
+                        height: 140,
+                        objectFit: "contain",
+                        marginBottom: 10,
+                        background: "#fff",
+                      }}
+                    />
+                    <div style={{ fontWeight: 700, marginBottom: 6 }}>
+                      {p.title}
+                    </div>
+                    <div style={{ fontSize: 14, color: "#555", marginBottom: 6 }}>
+                      {p.mall_name}
+                    </div>
+                    <div style={{ fontWeight: 700, marginBottom: 10 }}>
+                      {p.price_krw}원
+                    </div>
+                    <a
+                      href={p.url}
+                      target="_blank"
+                      rel="noreferrer"
+                      style={{
+                        display: "inline-block",
+                        padding: "8px 12px",
+                        borderRadius: 8,
+                        background: "#111827",
+                        color: "#fff",
+                        textDecoration: "none",
+                      }}
+                    >
+                      구매 링크
+                    </a>
                   </div>
-                </div>
-              ))}
-
-              <p style={{ fontSize: 12, color: "#666" }}>{result.disclaimer}</p>
+                ))}
+              </div>
             </div>
-          )}
+          ))}
+
+          <p style={{ fontSize: 12, color: "#666", marginTop: 8 }}>
+            {result.disclaimer}
+          </p>
+
+          <button
+            onClick={goToForm}
+            style={{
+              ...buttonStyle,
+              marginTop: 16,
+              background: "#374151",
+            }}
+          >
+            정보 변경하기
+          </button>
         </div>
-      </div>
+      )}
     </div>
   );
 }
