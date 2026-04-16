@@ -1,13 +1,15 @@
-import re
 import os
+import re
 import requests
 
 NAVER_CLIENT_ID = os.getenv("NAVER_CLIENT_ID", "").strip()
 NAVER_CLIENT_SECRET = os.getenv("NAVER_CLIENT_SECRET", "").strip()
 USE_NAVER_API = os.getenv("USE_NAVER_API", "false").strip().lower() == "true"
 
+
 def clean_html(text: str) -> str:
-    return re.sub(r"<.*?>", "", text)
+    return re.sub(r"<.*?>", "", text or "")
+
 
 def sample_products(query: str):
     return [
@@ -16,27 +18,29 @@ def sample_products(query: str):
             "mall_name": "Naver Mall A",
             "price_krw": 21900,
             "url": "https://shopping.naver.com/",
-            "image_url": f"https://via.placeholder.com/120?text={query}"
+            "image_url": f"https://via.placeholder.com/200?text={query}"
         },
         {
             "title": f"{query} 샘플 상품 2",
             "mall_name": "Naver Mall B",
             "price_krw": 24900,
             "url": "https://shopping.naver.com/",
-            "image_url": f"https://via.placeholder.com/120?text={query}"
+            "image_url": f"https://via.placeholder.com/200?text={query}"
         },
         {
             "title": f"{query} 샘플 상품 3",
             "mall_name": "Coupang",
             "price_krw": 25900,
             "url": "https://www.coupang.com/",
-            "image_url": f"https://via.placeholder.com/120?text={query}"
+            "image_url": f"https://via.placeholder.com/200?text={query}"
         }
     ]
 
 
 def search_naver_products(query: str):
-    print(f"[NAVER] query={query}")
+    search_query = f"{query} 영양제"
+
+    print(f"[NAVER] query={search_query}")
     print(f"[NAVER] USE_NAVER_API={USE_NAVER_API}")
     print(f"[NAVER] has_client_id={bool(NAVER_CLIENT_ID)}")
     print(f"[NAVER] has_client_secret={bool(NAVER_CLIENT_SECRET)}")
@@ -55,7 +59,7 @@ def search_naver_products(query: str):
         "X-Naver-Client-Secret": NAVER_CLIENT_SECRET,
     }
     params = {
-        "query": query,
+        "query": search_query,
         "display": 3,
         "sort": "sim"
     }
