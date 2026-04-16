@@ -95,6 +95,10 @@ export default function Home() {
   const recommendations = Array.isArray(result?.recommendations)
     ? result.recommendations
     : [];
+  const profile = result?.profile_summary || {};
+  const overallInterpretation = Array.isArray(result?.overall_interpretation)
+    ? result.overall_interpretation
+    : [];
 
   const profileSummary = getProfileSummary(form);
   const analysisSummary = getAnalysisSummary(form, result);
@@ -306,16 +310,31 @@ export default function Home() {
             <div style={sectionBlockStyle}>
               <div style={sectionHeaderStyle}>개인 프로필 요약</div>
               <ul style={ulStyle}>
-                {profileSummary.map((item, idx) => (
-                  <li key={idx} style={liStyle}>{item}</li>
-                ))}
+                <li style={liStyle}>
+                  {profile.age || "-"}세 {profile.gender || "-"}, 키 {profile.height_cm || "-"}cm / 몸무게 {profile.weight_kg || "-"}kg
+                </li>
+                <li style={liStyle}>
+                  활동량: {profile.activity || "-"}, 수면시간: {profile.sleep || "-"}시간
+                </li>
+                <li style={liStyle}>
+                  식사 유형: {profile.diet || "-"}
+                </li>
+                <li style={liStyle}>
+                  질환 정보: {Array.isArray(profile.conditions) && profile.conditions.length ? profile.conditions.join(", ") : "입력 없음"}
+                </li>
+                <li style={liStyle}>
+                  복용약 정보: {Array.isArray(profile.medications) && profile.medications.length ? profile.medications.join(", ") : "입력 없음"}
+                </li>
+                <li style={liStyle}>
+                  건강 목표: {profile.goal || "-"}
+                </li>
               </ul>
             </div>
 
             <div style={sectionBlockStyle}>
               <div style={sectionHeaderStyle}>종합 해석</div>
               <ul style={ulStyle}>
-                {analysisSummary.map((item, idx) => (
+                {overallInterpretation.map((item, idx) => (
                   <li key={idx} style={liStyle}>{item}</li>
                 ))}
               </ul>
@@ -350,26 +369,24 @@ export default function Home() {
 
                 <InfoRow label="추천 이유" value={rec?.reason || "-"} />
                 <InfoRow
+                  label="기대 역할"
+                  value={Array.isArray(rec?.benefits) ? rec.benefits.join(" / ") : "-"}
+                />
+                <InfoRow
                   label="식품 기반 보완"
                   value={Array.isArray(rec?.food_sources) ? rec.food_sources.join(", ") : "-"}
                 />
                 <InfoRow
                   label="주의사항"
-                  value={Array.isArray(rec?.cautions) ? rec.cautions.join(", ") : "-"}
+                  value={Array.isArray(rec?.cautions) ? rec.cautions.join(" / ") : "-"}
                 />
 
                 <div style={subSectionStyle}>
-                  <div style={subSectionHeaderStyle}>전문가형 체크 포인트</div>
+                  <div style={subSectionHeaderStyle}>실무형 체크 포인트</div>
                   <ul style={ulStyle}>
-                    <li style={liStyle}>
-                      현재 입력된 생활 패턴과 건강 목표 기준에서 우선 검토 대상 영양소입니다.
-                    </li>
-                    <li style={liStyle}>
-                      식품 섭취만으로 부족하다고 느껴질 때 보충제 선택을 고려할 수 있습니다.
-                    </li>
-                    <li style={liStyle}>
-                      질환 또는 복용약이 있는 경우에는 개인 상황에 맞는 확인이 필요합니다.
-                    </li>
+                    {(Array.isArray(rec?.practical_notes) ? rec.practical_notes : []).map((note, noteIdx) => (
+                      <li key={noteIdx} style={liStyle}>{note}</li>
+                    ))}
                   </ul>
                 </div>
 
