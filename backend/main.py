@@ -53,16 +53,18 @@ def analyze(req: AnalyzeRequest):
         bmi_category = "obese"
 
     user = req.model_dump()
-    nutrients = recommend_nutrients(user)
+    nutrient_items = recommend_nutrients(user)
 
     recommendations = []
-    for nutrient in nutrients[:3]:
+    for item in nutrient_items[:3]:
+        nutrient = item["name"]
         products = search_naver_products(nutrient)
+
         recommendations.append({
             "nutrient": nutrient,
-            "score": 1,
-            "reason": f"{nutrient} 보충 검토가 필요한 조건으로 분석되었습니다.",
-            "food_sources": ["식품으로도 보충 가능"],
+            "score": item["score"],
+            "reason": " / ".join(item["reasons"]) if item["reasons"] else f"{nutrient} 보충 검토가 필요한 조건으로 분석되었습니다.",
+            "food_sources": ["식품으로도 보충 가능", "균형 잡힌 식사 병행 권장"],
             "cautions": ["복용 전 개인 상태 확인 필요"],
             "sample_products": products
         })
