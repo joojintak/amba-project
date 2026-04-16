@@ -1,6 +1,4 @@
 import { useEffect, useState } from "react";
-import jsPDF from "jspdf";
-import "jspdf-autotable";
 
 export default function Home() {
   const API_URL = process.env.NEXT_PUBLIC_API_URL;
@@ -24,7 +22,9 @@ export default function Home() {
   });
 
   useEffect(() => {
-    window.scrollTo({ top: 0, behavior: "smooth" });
+    if (step === "result") {
+      window.scrollTo({ top: 0, behavior: "smooth" });
+    }
   }, [step]);
 
   const handleChange = (e) => {
@@ -34,32 +34,31 @@ export default function Home() {
     }));
   };
 
-  const buildPayload = () => {
-    return {
-      age: Number(form.age),
-      gender: form.gender,
-      height_cm: Number(form.height_cm),
-      weight_kg: Number(form.weight_kg),
-      activity: form.activity,
-      sleep: Number(form.sleep),
-      diet: form.diet,
-      conditions: form.conditions
-        ? form.conditions.split(",").map((v) => v.trim()).filter(Boolean)
-        : [],
-      medications: form.medications
-        ? form.medications.split(",").map((v) => v.trim()).filter(Boolean)
-        : [],
-      goal: form.goal,
-    };
-  };
+  const buildPayload = () => ({
+    age: Number(form.age),
+    gender: form.gender,
+    height_cm: Number(form.height_cm),
+    weight_kg: Number(form.weight_kg),
+    activity: form.activity,
+    sleep: Number(form.sleep),
+    diet: form.diet,
+    conditions: form.conditions
+      ? form.conditions.split(",").map((v) => v.trim()).filter(Boolean)
+      : [],
+    medications: form.medications
+      ? form.medications.split(",").map((v) => v.trim()).filter(Boolean)
+      : [],
+    goal: form.goal,
+  });
 
   const handleSubmit = async () => {
     setLoading(true);
     setError("");
+    setResult(null);
 
     try {
       if (!API_URL) {
-        throw new Error("NEXT_PUBLIC_API_URL 환경변수가 설정되지 않았습니다.");
+        throw new Error("NEXT_PUBLIC_API_URL 환경변수가 없습니다.");
       }
 
       const response = await fetch(`${API_URL}/analyze`, {
@@ -94,77 +93,79 @@ export default function Home() {
     setStep("form");
   };
 
-  const exportPdf = () => {
-    if (!result) return;
+  const exportPdf = async () => {
+    try {
+      const reportEl = document.getElementById("analysis-report");
+      if (!reportEl) {
+        throw new Error("리포트 영역을 찾을 수 없습니다.");
+      }
 
-    const doc = new jsPDF();
-    const profile = result?.profile_summary || {};
-    const scores = result?.dashboard_scores || {};
-    const recommendations = Array.isArray(result?.recommendations)
-      ? result.recommendations
-      : [];
+      const [{ default: html2canvas }, { jsPDF }] = await Promise.all([
+        import("html2canvas"),
+        import("jspdf"),
+      ]);
 
-    let y = 15;
-    doc.setFontSize(18);
-    doc.text("AMBA Supplement Analysis Report", 14, y);
-    y += 10;
+      const hiddenEls = document.querySelectorAll(".no-print");
 
-    doc.setFontSize(11);
-    doc.text(`BMI: ${result?.bmi ?? "-"}`, 14, y);
-    y += 7;
-    doc.text(`BMI Category: ${result?.bmi_category ?? "-"}`, 14, y);
-    y += 10;
+      hiddenEls.forEach((el) => {
+        el.dataset.originalDisplay = el.style.display || "";
+        el.style.display = "none";
+      });
 
-    doc.text(`Age: ${profile.age ?? "-"}`, 14, y);
-    y += 7;
-    doc.text(`Gender: ${profile.gender ?? "-"}`, 14, y);
-    y += 7;
-    doc.text(`Height / Weight: ${profile.height_cm ?? "-"}cm / ${profile.weight_kg ?? "-"}kg`, 14, y);
-    y += 10;
+      const canvas = await html2canvas(reportEl, {
+        scale: 2,
+        useCORS: true,
+        backgroundColor: "#ffffff",
+        scrollY: -window.scrollY,
+      });
 
-    doc.text(`Recommendation Score: ${scores.recommendation_score ?? "-"}`, 14, y);
-    y += 7;
-    doc.text(`Suitability Score: ${scores.suitability_score ?? "-"}`, 14, y);
-    y += 7;
-    doc.text(`Lifestyle Risk Score: ${scores.lifestyle_risk_score ?? "-"}`, 14, y);
-    y += 7;
-    doc.text(`Priority Score: ${scores.priority_score ?? "-"}`, 14, y);
-    y += 10;
+      hiddenEls.forEach((el) => {
+        el.style.display = el.dataset.originalDisplay;
+      });
 
-    const tableBody = recommendations.map((rec, idx) => [
-      `${idx + 1}`,
-      rec?.nutrient || "-",
-      rec?.score || "-",
-      rec?.reason || "-",
-    ]);
+      const imgData = canvas.toDataURL("image/png");
+      const pdf = new jsPDF("p", "mm", "a4");
 
-    doc.autoTable({
-      startY: y,
-      head: [["No", "Nutrient", "Score", "Reason"]],
-      body: tableBody,
-      styles: { fontSize: 9, cellWidth: "wrap" },
-      headStyles: { fillColor: [0, 56, 118] },
-    });
+      const pdfWidth = 210;
+      const pdfHeight = 297;
 
-    const finalY = doc.lastAutoTable.finalY + 10;
-    doc.setFontSize(10);
-    doc.text(
-      result?.disclaimer || "본 결과는 건강 정보 제공용이며, 의사의 진단·치료·처방을 대체하지 않습니다.",
-      14,
-      finalY
-    );
+      const imgWidth = pdfWidth;
+      const imgHeight = (canvas.height * imgWidth) / canvas.width;
 
-    doc.save("AMBA_Analysis_Report.pdf");
+      let heightLeft = imgHeight;
+      let position = 0;
+
+      pdf.addImage(imgData, "PNG", 0, position, imgWidth, imgHeight);
+      heightLeft -= pdfHeight;
+
+      while (heightLeft > 0) {
+        position = heightLeft - imgHeight;
+        pdf.addPage();
+        pdf.addImage(imgData, "PNG", 0, position, imgWidth, imgHeight);
+        heightLeft -= pdfHeight;
+      }
+
+      pdf.save("AMBA_분석보고서.pdf");
+    } catch (err) {
+      alert(`PDF 생성 오류: ${err.message}`);
+    }
   };
 
   const recommendations = Array.isArray(result?.recommendations)
     ? result.recommendations
     : [];
-  const profile = result?.profile_summary || {};
+
+  const profile = result?.profile_summary && typeof result.profile_summary === "object"
+    ? result.profile_summary
+    : {};
+
   const overallInterpretation = Array.isArray(result?.overall_interpretation)
     ? result.overall_interpretation
     : [];
-  const scores = result?.dashboard_scores || {};
+
+  const scores = result?.dashboard_scores && typeof result.dashboard_scores === "object"
+    ? result.dashboard_scores
+    : {};
 
   return (
     <div style={{ background: "#f3f4f6", minHeight: "100vh" }}>
@@ -192,7 +193,7 @@ export default function Home() {
             }}
           />
           <p style={{ marginTop: 16, fontWeight: 800, color: "#003876" }}>
-            건강 정보와 추천 영양소를 분석 중입니다...
+            분석 중입니다...
           </p>
           <style>{`
             @keyframes spin {
@@ -226,13 +227,13 @@ export default function Home() {
           <div style={cardStyle}>
             <h2 style={titleStyle}>건강 정보 입력</h2>
             <p style={descStyle}>
-              아래 항목을 입력한 뒤 분석하기를 누르면, 다음 화면에서 구조화된 분석 결과를 확인할 수 있습니다.
+              아래 정보를 입력한 뒤 분석하기를 누르면 결과 페이지로 이동합니다.
             </p>
 
             {error && <div style={errorBoxStyle}>{error}</div>}
 
             <Field label="나이">
-              <input name="age" value={form.age} onChange={handleChange} style={inputStyle} inputMode="numeric" />
+              <input name="age" value={form.age} onChange={handleChange} style={inputStyle} />
             </Field>
 
             <Field label="성별">
@@ -243,11 +244,11 @@ export default function Home() {
             </Field>
 
             <Field label="키(cm)">
-              <input name="height_cm" value={form.height_cm} onChange={handleChange} style={inputStyle} inputMode="decimal" />
+              <input name="height_cm" value={form.height_cm} onChange={handleChange} style={inputStyle} />
             </Field>
 
             <Field label="몸무게(kg)">
-              <input name="weight_kg" value={form.weight_kg} onChange={handleChange} style={inputStyle} inputMode="decimal" />
+              <input name="weight_kg" value={form.weight_kg} onChange={handleChange} style={inputStyle} />
             </Field>
 
             <Field label="활동량">
@@ -259,7 +260,7 @@ export default function Home() {
             </Field>
 
             <Field label="수면시간">
-              <input name="sleep" value={form.sleep} onChange={handleChange} style={inputStyle} inputMode="numeric" />
+              <input name="sleep" value={form.sleep} onChange={handleChange} style={inputStyle} />
             </Field>
 
             <Field label="식사 유형">
@@ -289,33 +290,26 @@ export default function Home() {
               </select>
             </Field>
 
-            <button onClick={handleSubmit} style={primaryButtonStyle} disabled={loading}>
+            <button onClick={handleSubmit} style={primaryButtonStyle}>
               분석하기
             </button>
           </div>
         )}
 
         {step === "result" && result && (
-          <div style={cardStyle}>
+          <div id="analysis-report" style={cardStyle}>
             <h2 style={titleStyle}>분석 결과</h2>
             <p style={descStyle}>
-              입력한 건강 정보와 생활 패턴을 바탕으로 영양소 우선순위와 참고 상품을 정리했습니다.
+              입력한 건강 정보와 생활 패턴을 바탕으로 분석한 결과입니다.
             </p>
 
-            <div style={{ marginBottom: 16 }}>
+            <div className="no-print" style={{ marginBottom: 16 }}>
               <button onClick={goToForm} style={secondaryButtonStyle}>
                 정보 변경하기
               </button>
             </div>
 
-            <div
-              style={{
-                display: "grid",
-                gridTemplateColumns: "1fr 1fr",
-                gap: 16,
-                marginBottom: 18,
-              }}
-            >
+            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16, marginBottom: 18 }}>
               <SummaryCard title="BMI" value={String(result?.bmi ?? "-")} />
               <SummaryCard title="체형 분류" value={String(result?.bmi_category ?? "-")} />
             </div>
@@ -323,7 +317,7 @@ export default function Home() {
             <div style={sectionBlockStyle}>
               <div style={sectionHeaderStyle}>핵심 분석 대시보드</div>
 
-              <div style={{ display: "grid", gridTemplateColumns: "1fr", gap: 18 }}>
+              <div style={{ display: "grid", gap: 18 }}>
                 <div style={{ display: "flex", justifyContent: "center" }}>
                   <GaugeCard
                     title="추천 점수"
@@ -375,9 +369,13 @@ export default function Home() {
             <div style={sectionBlockStyle}>
               <div style={sectionHeaderStyle}>종합 해석</div>
               <ul style={ulStyle}>
-                {overallInterpretation.map((item, idx) => (
-                  <li key={idx} style={liStyle}>{item}</li>
-                ))}
+                {overallInterpretation.length > 0 ? (
+                  overallInterpretation.map((item, idx) => (
+                    <li key={idx} style={liStyle}>{item}</li>
+                  ))
+                ) : (
+                  <li style={liStyle}>종합 해석 정보가 없습니다.</li>
+                )}
               </ul>
             </div>
 
@@ -465,7 +463,7 @@ export default function Home() {
               </div>
             ))}
 
-            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12, marginBottom: 14 }}>
+            <div className="no-print" style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12, marginBottom: 14 }}>
               <button onClick={goToForm} style={secondaryButtonStyle}>
                 정보 변경하기
               </button>
