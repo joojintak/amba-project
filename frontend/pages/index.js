@@ -659,7 +659,9 @@ export default function Home() {
                             </div>
         
                             <div style={productPriceStyle}>
-                              {typeof p?.price_krw !== "undefined" ? `${p.price_krw}원` : "-"}
+                              {typeof p?.price_krw !== "undefined"
+                                ? `${Number(p.price_krw).toLocaleString()}원`
+                                : "-"}
                             </div>
         
                             {p?.url ? (
