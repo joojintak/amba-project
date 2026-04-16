@@ -1036,6 +1036,13 @@ const scoreTrackStyle = {
   overflow: "hidden",
 };
 
+const fieldErrorStyle = {
+  marginTop: 6,
+  color: "#dc2626",
+  fontSize: 13,
+  fontWeight: 600,
+};
+
 const actionBarStyle = {
   position: "sticky",
   bottom: 12,
