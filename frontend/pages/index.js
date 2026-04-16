@@ -428,6 +428,16 @@ export default function Home() {
         
             {resultPage === "products" && (
               <>
+                <div style={{ marginBottom: 12 }}>
+                  <button
+                    onClick={() => {
+                      setResultPage("summary");
+                      window.scrollTo({ top: 0, behavior: "smooth" });
+                    }}
+                    style={secondaryButtonStyle}
+                  >
+                    분석 요약으로 돌아가기
+                  </button>
                 <div style={sectionBlockStyle}>
                   <div style={sectionHeaderStyle}>영양제 추천</div>
                   <p style={{ ...descStyle, marginBottom: 0 }}>
