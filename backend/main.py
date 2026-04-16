@@ -8,6 +8,64 @@ from fastapi.middleware.cors import CORSMiddleware
 
 app = FastAPI(title="AMBA Supplement Recommender API")
 
+def clamp_score(value, min_value=0, max_value=100):
+    return max(min_value, min(max_value, int(round(value))))
+
+
+def get_badge(score):
+    if score >= 85:
+        return "매우 높음"
+    elif score >= 70:
+        return "높음"
+    elif score >= 50:
+        return "보통"
+    else:
+        return "낮음"
+
+
+def calculate_dashboard_scores(req, bmi, recommendations):
+    suitability = 60
+    lifestyle_risk = 30
+    priority_score = 50
+
+    if req.goal:
+        suitability += 10
+    if req.activity == "low":
+        lifestyle_risk += 15
+        priority_score += 10
+    if req.sleep < 6:
+        lifestyle_risk += 15
+        priority_score += 10
+    if req.diet == "irregular":
+        lifestyle_risk += 10
+        priority_score += 10
+    if len(req.conditions) > 0:
+        lifestyle_risk += 10
+        priority_score += 10
+
+    if bmi < 18.5:
+        lifestyle_risk += 10
+    elif bmi >= 25:
+        lifestyle_risk += 15
+
+    top_score = recommendations[0]["score"] if recommendations else 0
+    recommendation_score = clamp_score(55 + top_score * 10)
+
+    suitability = clamp_score(suitability + top_score * 5)
+    lifestyle_risk = clamp_score(lifestyle_risk)
+    priority_score = clamp_score(priority_score + len(recommendations) * 5)
+
+    return {
+        "recommendation_score": recommendation_score,
+        "recommendation_badge": get_badge(recommendation_score),
+        "suitability_score": suitability,
+        "suitability_badge": get_badge(suitability),
+        "lifestyle_risk_score": lifestyle_risk,
+        "lifestyle_risk_badge": get_badge(lifestyle_risk),
+        "priority_score": priority_score,
+        "priority_badge": get_badge(priority_score),
+    }
+
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
@@ -107,12 +165,13 @@ def analyze(req: AnalyzeRequest):
             ],
             "sample_products": products
         })
-
+    dashboard_scores = calculate_dashboard_scores(req, bmi, recommendations)
     return {
         "bmi": round(bmi, 2),
         "bmi_category": bmi_category,
         "profile_summary": profile_summary,
         "overall_interpretation": overall_interpretation,
+        "dashboard_scores": dashboard_scores,
         "recommendations": recommendations,
         "disclaimer": "본 결과는 건강 정보 제공용이며, 의사의 진단·치료·처방을 대체하지 않습니다."
     }
