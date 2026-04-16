@@ -771,3 +771,10 @@ const subSectionStyle = {
   borderTop: "1px solid #e5e7eb",
   paddingTop: 14,
 };
+
+const subSectionHeaderStyle = {
+  fontSize: 16,
+  fontWeight: 800,
+  marginBottom: 8,
+  color: "#111827",
+};
