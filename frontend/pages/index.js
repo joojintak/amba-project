@@ -4,6 +4,7 @@ export default function Home() {
   const API_URL = process.env.NEXT_PUBLIC_API_URL;
 
   const [step, setStep] = useState("form");
+  const [resultPage, setResultPage] = useState("summary");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [result, setResult] = useState(null);
@@ -81,6 +82,7 @@ export default function Home() {
       }
 
       setResult(data);
+      setResultPage("summary");
       setStep("result");
     } catch (err) {
       setError(err?.message || "알 수 없는 오류가 발생했습니다.");
@@ -313,173 +315,213 @@ export default function Home() {
             <p style={descStyle}>
               입력한 건강 정보와 생활 패턴을 바탕으로 구조화된 분석 결과를 정리했습니다.
             </p>
-
-            <div className="no-print" style={{ marginBottom: 16 }}>
-              <button onClick={goToForm} style={secondaryButtonStyle}>
-                정보 변경하기
-              </button>
-            </div>
-
-            <div style={topSummaryGridStyle}>
-              <SummaryCard title="BMI" value={String(result?.bmi ?? "-")} />
-              <SummaryCard title="체형 분류" value={String(result?.bmi_category ?? "-")} />
-            </div>
-
-            <div style={sectionBlockStyle}>
-              <div style={sectionHeaderStyle}>핵심 분석 대시보드</div>
-
-              <div style={{ display: "grid", gap: 20 }}>
-                <div style={{ display: "flex", justifyContent: "center" }}>
-                  <GaugeCard
-                    title="추천 점수"
-                    score={scores.recommendation_score || 0}
-                    badge={scores.recommendation_badge || "-"}
-                  />
+        
+            {resultPage === "summary" && (
+              <>
+                <div style={topSummaryGridStyle}>
+                  <SummaryCard title="BMI" value={String(result?.bmi ?? "-")} />
+                  <SummaryCard title="체형 분류" value={String(result?.bmi_category ?? "-")} />
                 </div>
-
-                <ScoreRow
-                  title="추천 적합도"
-                  score={scores.suitability_score || 0}
-                  badge={scores.suitability_badge || "-"}
-                />
-                <ScoreRow
-                  title="생활습관 위험도"
-                  score={scores.lifestyle_risk_score || 0}
-                  badge={scores.lifestyle_risk_badge || "-"}
-                />
-                <ScoreRow
-                  title="보완 우선순위"
-                  score={scores.priority_score || 0}
-                  badge={scores.priority_badge || "-"}
-                  fixedColor="#7c3aed"
-                />
-              </div>
-            </div>
-
-            <div style={sectionBlockStyle}>
-              <div style={sectionHeaderStyle}>점수 설명 박스</div>
-              <ul style={ulStyle}>
-                {scoreGuide.map((item, idx) => (
-                  <li key={idx} style={liStyle}>{item}</li>
-                ))}
-              </ul>
-            </div>
-
-            <div style={sectionBlockStyle}>
-              <div style={sectionHeaderStyle}>추천 근거 요약</div>
-              <ul style={ulStyle}>
-                {recommendationReasons.map((item, idx) => (
-                  <li key={idx} style={liStyle}>{item}</li>
-                ))}
-              </ul>
-            </div>
-
-            <div style={sectionBlockStyle}>
-              <div style={sectionHeaderStyle}>개인 프로필 요약</div>
-              <ul style={ulStyle}>
-                <li style={liStyle}>
-                  {profile.age || "-"}세 {profile.gender || "-"}, 키 {profile.height_cm || "-"}cm / 몸무게 {profile.weight_kg || "-"}kg
-                </li>
-                <li style={liStyle}>
-                  활동량: {profile.activity || "-"}, 수면시간: {profile.sleep || "-"}시간
-                </li>
-                <li style={liStyle}>식사 유형: {profile.diet || "-"}</li>
-                <li style={liStyle}>
-                  질환 정보: {Array.isArray(profile.conditions) && profile.conditions.length ? profile.conditions.join(", ") : "입력 없음"}
-                </li>
-                <li style={liStyle}>
-                  복용약 정보: {Array.isArray(profile.medications) && profile.medications.length ? profile.medications.join(", ") : "입력 없음"}
-                </li>
-                <li style={liStyle}>건강 목표: {profile.goal || "-"}</li>
-              </ul>
-            </div>
-
-            <div style={sectionBlockStyle}>
-              <div style={sectionHeaderStyle}>종합 해석</div>
-              <ul style={ulStyle}>
-                {overallInterpretation.length > 0 ? (
-                  overallInterpretation.map((item, idx) => (
-                    <li key={idx} style={liStyle}>{item}</li>
-                  ))
-                ) : (
-                  <li style={liStyle}>종합 해석 정보가 없습니다.</li>
-                )}
-              </ul>
-            </div>
-
-            {recommendations.length === 0 && (
-              <div style={errorBoxStyle}>추천 결과가 비어 있습니다.</div>
-            )}
-
-            {recommendations.map((rec, idx) => (
-              <div key={idx} style={recommendCardStyle}>
-                <div style={recommendTitleRowStyle}>
-                  <div style={rankBadgeStyle}>우선순위 {idx + 1}</div>
-                  <div style={{ fontSize: 24, fontWeight: 900 }}>{rec?.nutrient || "추천 영양소"}</div>
-                  <div style={smallScoreBadgeStyle}>점수 {rec?.score ?? "-"}</div>
-                </div>
-
-                <InfoRow label="추천 이유" value={rec?.reason || "-"} />
-                <InfoRow label="기대 역할" value={Array.isArray(rec?.benefits) ? rec.benefits.join(" / ") : "-"} />
-                <InfoRow label="식품 기반 보완" value={Array.isArray(rec?.food_sources) ? rec.food_sources.join(", ") : "-"} />
-                <InfoRow label="주의사항" value={Array.isArray(rec?.cautions) ? rec.cautions.join(" / ") : "-"} />
-
-                <div style={subSectionStyle}>
-                  <div style={subSectionHeaderStyle}>추천 상품</div>
-                  <div style={productGridStyle}>
-                    {(Array.isArray(rec?.sample_products) ? rec.sample_products : []).map((p, i) => (
-                      <div key={i} style={productCardStyle}>
-                        {p?.image_url ? (
-                          <img
-                            src={p.image_url}
-                            alt={p?.title || "product"}
-                            style={productImageStyle}
-                          />
-                        ) : null}
-
-                        <div style={productTitleStyle}>
-                          {p?.title || "상품명 없음"}
-                        </div>
-
-                        <div style={productMallStyle}>
-                          판매처: {p?.mall_name || "-"}
-                        </div>
-
-                        <div style={productPriceStyle}>
-                          {typeof p?.price_krw !== "undefined" ? `${p.price_krw}원` : "-"}
-                        </div>
-
-                        {p?.url ? (
-                          <a
-                            href={p.url}
-                            target="_blank"
-                            rel="noreferrer"
-                            style={buyButtonStyle}
-                          >
-                            구매 링크
-                          </a>
-                        ) : null}
-                      </div>
-                    ))}
+        
+                <div style={sectionBlockStyle}>
+                  <div style={sectionHeaderStyle}>핵심 분석 대시보드</div>
+        
+                  <div style={{ display: "grid", gap: 20 }}>
+                    <div style={{ display: "flex", justifyContent: "center" }}>
+                      <GaugeCard
+                        title="추천 점수"
+                        score={scores.recommendation_score || 0}
+                        badge={scores.recommendation_badge || "-"}
+                      />
+                    </div>
+        
+                    <ScoreRow
+                      title="추천 적합도"
+                      score={scores.suitability_score || 0}
+                      badge={scores.suitability_badge || "-"}
+                    />
+                    <ScoreRow
+                      title="생활습관 위험도"
+                      score={scores.lifestyle_risk_score || 0}
+                      badge={scores.lifestyle_risk_badge || "-"}
+                    />
+                    <ScoreRow
+                      title="보완 우선순위"
+                      score={scores.priority_score || 0}
+                      badge={scores.priority_badge || "-"}
+                      fixedColor="#7c3aed"
+                    />
                   </div>
                 </div>
-              </div>
-            ))}
-
-            <div
-              className="no-print"
-              style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12, marginBottom: 14 }}
-            >
-              <button onClick={goToForm} style={secondaryButtonStyle}>
-                정보 변경하기
-              </button>
-              <button onClick={exportPdf} style={darkButtonStyle}>
-                PDF 리포트 다운로드
-              </button>
-            </div>
-
+        
+                <div style={sectionBlockStyle}>
+                  <div style={sectionHeaderStyle}>점수 설명 박스</div>
+                  <ul style={ulStyle}>
+                    {scoreGuide.map((item, idx) => (
+                      <li key={idx} style={liStyle}>{item}</li>
+                    ))}
+                  </ul>
+                </div>
+        
+                <div style={sectionBlockStyle}>
+                  <div style={sectionHeaderStyle}>추천 근거 요약</div>
+                  <ul style={ulStyle}>
+                    {recommendationReasons.map((item, idx) => (
+                      <li key={idx} style={liStyle}>{item}</li>
+                    ))}
+                  </ul>
+                </div>
+        
+                <div style={sectionBlockStyle}>
+                  <div style={sectionHeaderStyle}>개인 프로필 요약</div>
+                  <ul style={ulStyle}>
+                    <li style={liStyle}>
+                      {profile.age || "-"}세 {profile.gender || "-"}, 키 {profile.height_cm || "-"}cm / 몸무게 {profile.weight_kg || "-"}kg
+                    </li>
+                    <li style={liStyle}>
+                      활동량: {profile.activity || "-"}, 수면시간: {profile.sleep || "-"}시간
+                    </li>
+                    <li style={liStyle}>식사 유형: {profile.diet || "-"}</li>
+                    <li style={liStyle}>
+                      질환 정보: {Array.isArray(profile.conditions) && profile.conditions.length ? profile.conditions.join(", ") : "입력 없음"}
+                    </li>
+                    <li style={liStyle}>
+                      복용약 정보: {Array.isArray(profile.medications) && profile.medications.length ? profile.medications.join(", ") : "입력 없음"}
+                    </li>
+                    <li style={liStyle}>건강 목표: {profile.goal || "-"}</li>
+                  </ul>
+                </div>
+        
+                <div style={sectionBlockStyle}>
+                  <div style={sectionHeaderStyle}>종합 해석</div>
+                  <ul style={ulStyle}>
+                    {overallInterpretation.length > 0 ? (
+                      overallInterpretation.map((item, idx) => (
+                        <li key={idx} style={liStyle}>{item}</li>
+                      ))
+                    ) : (
+                      <li style={liStyle}>종합 해석 정보가 없습니다.</li>
+                    )}
+                  </ul>
+                </div>
+        
+                <div
+                  className="no-print"
+                  style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12, marginTop: 8 }}
+                >
+                  <button
+                    onClick={() => {
+                      setResultPage("products");
+                      window.scrollTo({ top: 0, behavior: "smooth" });
+                    }}
+                    style={darkButtonStyle}
+                  >
+                    영양제 추천
+                  </button>
+        
+                  <button onClick={goToForm} style={secondaryButtonStyle}>
+                    정보변경하기
+                  </button>
+                </div>
+              </>
+            )}
+        
+            {resultPage === "products" && (
+              <>
+                <div style={sectionBlockStyle}>
+                  <div style={sectionHeaderStyle}>영양제 추천</div>
+                  <p style={{ ...descStyle, marginBottom: 0 }}>
+                    우선순위 1~3 기준으로 추천 영양제와 구매 링크를 정리했습니다.
+                  </p>
+                </div>
+        
+                {recommendations.length === 0 && (
+                  <div style={errorBoxStyle}>추천 결과가 비어 있습니다.</div>
+                )}
+        
+                {recommendations.map((rec, idx) => (
+                  <div key={idx} style={recommendCardStyle}>
+                    <div style={recommendTitleRowStyle}>
+                      <div style={rankBadgeStyle}>우선순위 {idx + 1}</div>
+                      <div style={{ fontSize: 24, fontWeight: 900 }}>
+                        {rec?.nutrient || "추천 영양소"}
+                      </div>
+                      <div style={smallScoreBadgeStyle}>점수 {rec?.score ?? "-"}</div>
+                    </div>
+        
+                    <InfoRow label="추천 이유" value={rec?.reason || "-"} />
+                    <InfoRow
+                      label="기대 역할"
+                      value={Array.isArray(rec?.benefits) ? rec.benefits.join(" / ") : "-"}
+                    />
+                    <InfoRow
+                      label="식품 기반 보완"
+                      value={Array.isArray(rec?.food_sources) ? rec.food_sources.join(", ") : "-"}
+                    />
+                    <InfoRow
+                      label="주의사항"
+                      value={Array.isArray(rec?.cautions) ? rec.cautions.join(" / ") : "-"}
+                    />
+        
+                    <div style={subSectionStyle}>
+                      <div style={subSectionHeaderStyle}>추천 상품</div>
+                      <div style={productGridStyle}>
+                        {(Array.isArray(rec?.sample_products) ? rec.sample_products : []).map((p, i) => (
+                          <div key={i} style={productCardStyle}>
+                            {p?.image_url ? (
+                              <img
+                                src={p.image_url}
+                                alt={p?.title || "product"}
+                                style={productImageStyle}
+                              />
+                            ) : null}
+        
+                            <div style={productTitleStyle}>
+                              {p?.title || "상품명 없음"}
+                            </div>
+        
+                            <div style={productMallStyle}>
+                              판매처: {p?.mall_name || "-"}
+                            </div>
+        
+                            <div style={productPriceStyle}>
+                              {typeof p?.price_krw !== "undefined" ? `${p.price_krw}원` : "-"}
+                            </div>
+        
+                            {p?.url ? (
+                              <a
+                                href={p.url}
+                                target="_blank"
+                                rel="noreferrer"
+                                style={buyButtonStyle}
+                              >
+                                구매 링크
+                              </a>
+                            ) : null}
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  </div>
+                ))}
+        
+                <div
+                  className="no-print"
+                  style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12, marginBottom: 14 }}
+                >
+                  <button onClick={goToForm} style={secondaryButtonStyle}>
+                    정보변경하기
+                  </button>
+                  <button onClick={exportPdf} style={darkButtonStyle}>
+                    PDF 리포트 다운로드
+                  </button>
+                </div>
+              </>
+            )}
+        
             <div
               style={{
+                marginTop: 6,
                 padding: 12,
                 background: "#f9fafb",
                 borderRadius: 12,
