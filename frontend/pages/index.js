@@ -5,10 +5,11 @@ export default function Home() {
 
   const [step, setStep] = useState("form");
   const [resultPage, setResultPage] = useState("summary");
+  const [pageFade, setPageFade] = useState(true);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [result, setResult] = useState(null);
-
+  
   const goBack = () => {
     if (step === "result") {
       if (resultPage === "products") {
@@ -20,6 +21,27 @@ export default function Home() {
       }
     }
   };
+  const goToProducts = () => {
+    setPageFade(false);
+  
+    setTimeout(() => {
+      setResultPage("products");
+      window.scrollTo({ top: 0, behavior: "smooth" });
+      setPageFade(true);
+    }, 180);
+  };
+
+  const goToSummary = () => {
+    setPageFade(false);
+  
+    setTimeout(() => {
+      setResultPage("summary");
+      window.scrollTo({ top: 0, behavior: "smooth" });
+      setPageFade(true);
+    }, 180);
+  };
+
+  
   const [form, setForm] = useState({
     age: "42",
     gender: "male",
