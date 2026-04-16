@@ -17,8 +17,8 @@ export default function Home() {
   });
 
   const [result, setResult] = useState(null);
-  const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
 
   const handleChange = (e) => {
     setForm({
@@ -74,28 +74,87 @@ export default function Home() {
   return (
     <div style={{ maxWidth: 1200, margin: "0 auto", padding: 24 }}>
       <h1>AMBA 영양제 추천 앱</h1>
-      <p>건강 정보를 입력 후 추천 영양소와 구매 링크를 확인하세요.</p>
+      <p>건강 정보를 입력하면 맞춤 영양제와 구매 링크를 제공합니다.</p>
 
-      <div style={{ display: "flex", gap: 24, alignItems: "flex-start" }}>
+      <div style={{ display: "flex", gap: 24 }}>
+        {/* 입력 영역 */}
         <div style={{ flex: 1, border: "1px solid #ddd", padding: 16, borderRadius: 8 }}>
           <h2>건강 정보 입력</h2>
 
-          <div><label>나이</label><input name="age" value={form.age} onChange={handleChange} /></div>
-          <div><label>성별</label><input name="gender" value={form.gender} onChange={handleChange} /></div>
-          <div><label>키(cm)</label><input name="height_cm" value={form.height_cm} onChange={handleChange} /></div>
-          <div><label>몸무게(kg)</label><input name="weight_kg" value={form.weight_kg} onChange={handleChange} /></div>
-          <div><label>활동량</label><input name="activity" value={form.activity} onChange={handleChange} /></div>
-          <div><label>수면시간</label><input name="sleep" value={form.sleep} onChange={handleChange} /></div>
-          <div><label>식사 유형</label><input name="diet" value={form.diet} onChange={handleChange} /></div>
-          <div><label>질환(쉼표 구분)</label><input name="conditions" value={form.conditions} onChange={handleChange} /></div>
-          <div><label>복용약(쉼표 구분)</label><input name="medications" value={form.medications} onChange={handleChange} /></div>
-          <div><label>건강 목표</label><input name="goal" value={form.goal} onChange={handleChange} /></div>
+          <div>
+            <label>나이</label>
+            <input name="age" value={form.age} onChange={handleChange} />
+          </div>
+
+          <div>
+            <label>성별</label>
+            <select name="gender" value={form.gender} onChange={handleChange}>
+              <option value="male">남성</option>
+              <option value="female">여성</option>
+            </select>
+          </div>
+
+          <div>
+            <label>키(cm)</label>
+            <input name="height_cm" value={form.height_cm} onChange={handleChange} />
+          </div>
+
+          <div>
+            <label>몸무게(kg)</label>
+            <input name="weight_kg" value={form.weight_kg} onChange={handleChange} />
+          </div>
+
+          <div>
+            <label>활동량</label>
+            <select name="activity" value={form.activity} onChange={handleChange}>
+              <option value="low">낮음</option>
+              <option value="medium">보통</option>
+              <option value="high">높음</option>
+            </select>
+          </div>
+
+          <div>
+            <label>수면시간</label>
+            <input name="sleep" value={form.sleep} onChange={handleChange} />
+          </div>
+
+          <div>
+            <label>식사 유형</label>
+            <select name="diet" value={form.diet} onChange={handleChange}>
+              <option value="irregular">불규칙</option>
+              <option value="regular">규칙적</option>
+              <option value="vegetarian">채식 위주</option>
+              <option value="high_protein">고단백</option>
+            </select>
+          </div>
+
+          <div>
+            <label>질환 (쉼표 구분)</label>
+            <input name="conditions" value={form.conditions} onChange={handleChange} />
+          </div>
+
+          <div>
+            <label>복용약 (쉼표 구분)</label>
+            <input name="medications" value={form.medications} onChange={handleChange} />
+          </div>
+
+          <div>
+            <label>건강 목표</label>
+            <select name="goal" value={form.goal} onChange={handleChange}>
+              <option value="피로 관리">피로 관리</option>
+              <option value="면역 관리">면역 관리</option>
+              <option value="수면 관리">수면 관리</option>
+              <option value="체중 관리">체중 관리</option>
+              <option value="운동 보조">운동 보조</option>
+            </select>
+          </div>
 
           <button onClick={handleSubmit} style={{ marginTop: 16 }}>
             분석하기
           </button>
         </div>
 
+        {/* 결과 영역 */}
         <div style={{ flex: 1, border: "1px solid #ddd", padding: 16, borderRadius: 8 }}>
           <h2>분석 결과</h2>
 
@@ -103,33 +162,25 @@ export default function Home() {
           {error && <p style={{ color: "red" }}>{error}</p>}
 
           {!loading && !error && !result && (
-            <p>왼쪽 입력 후 분석하기를 눌러 주세요.</p>
+            <p>왼쪽에서 정보를 입력하고 분석하기를 눌러주세요.</p>
           )}
 
           {result && (
             <div>
               <p><strong>BMI:</strong> {result.bmi}</p>
-              <p><strong>BMI 분류:</strong> {result.bmi_category}</p>
+              <p><strong>체형:</strong> {result.bmi_category}</p>
 
-              {result.recommendations?.map((rec, idx) => (
-                <div
-                  key={idx}
-                  style={{
-                    border: "1px solid #ccc",
-                    borderRadius: 8,
-                    padding: 12,
-                    marginBottom: 16,
-                  }}
-                >
+              {result.recommendations.map((rec, idx) => (
+                <div key={idx} style={{ marginTop: 16, padding: 12, border: "1px solid #ccc", borderRadius: 8 }}>
                   <h3>{rec.nutrient}</h3>
                   <p><strong>추천 이유:</strong> {rec.reason}</p>
-                  <p><strong>식품 소스:</strong> {rec.food_sources?.join(", ")}</p>
-                  <p><strong>주의사항:</strong> {rec.cautions?.join(", ")}</p>
+                  <p><strong>식품:</strong> {rec.food_sources.join(", ")}</p>
+                  <p><strong>주의:</strong> {rec.cautions.join(", ")}</p>
 
                   <h4>추천 상품</h4>
                   <ul>
-                    {rec.sample_products?.map((p, pIdx) => (
-                      <li key={pIdx} style={{ marginBottom: 8 }}>
+                    {rec.sample_products.map((p, i) => (
+                      <li key={i}>
                         <a href={p.url} target="_blank" rel="noreferrer">
                           {p.title}
                         </a>
@@ -143,7 +194,9 @@ export default function Home() {
                 </div>
               ))}
 
-              <p style={{ fontSize: 12, color: "#666" }}>{result.disclaimer}</p>
+              <p style={{ fontSize: 12, color: "#666" }}>
+                {result.disclaimer}
+              </p>
             </div>
           )}
         </div>
