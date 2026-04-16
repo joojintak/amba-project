@@ -117,6 +117,29 @@ export default function Home() {
     goal: form.goal,
   });
 
+  const requiredFieldsFilled =
+    form.age &&
+    form.gender &&
+    form.height_cm &&
+    form.weight_kg &&
+    form.activity &&
+    form.sleep &&
+    form.diet &&
+    form.goal;
+  
+  const completionCount = [
+    form.age,
+    form.gender,
+    form.height_cm,
+    form.weight_kg,
+    form.activity,
+    form.sleep,
+    form.diet,
+    form.goal,
+  ].filter(Boolean).length;
+  
+  const completionPercent = Math.round((completionCount / 8) * 100);
+
   const handleSubmit = async () => {
     if (!validateForm()) return;
     
@@ -306,112 +329,166 @@ export default function Home() {
         {step === "form" && (
           <div style={mainCardStyle}>
             <h2 style={titleStyle}>건강 정보 입력</h2>
+              <div style={progressWrapStyle}>
+                <div style={progressHeaderStyle}>
+                  <span>입력 진행률</span>
+                  <span>{completionPercent}%</span>
+                </div>
+                <div style={progressTrackStyle}>
+                  <div
+                    style={{
+                      ...progressFillStyle,
+                      width: `${completionPercent}%`,
+                    }}
+                  />
+                </div>
+              </div>
+              <div style={chipWrapStyle}>
+                <StatusChip label="나이" active={!!form.age} />
+                <StatusChip label="성별" active={!!form.gender} />
+                <StatusChip label="키/몸무게" active={!!form.height_cm && !!form.weight_kg} />
+                <StatusChip label="활동량" active={!!form.activity} />
+                <StatusChip label="수면" active={!!form.sleep} />
+                <StatusChip label="식사유형" active={!!form.diet} />
+                <StatusChip label="목표" active={!!form.goal} />
+              </div>
+                    
             <p style={descStyle}>
               아래 정보를 입력한 뒤 분석하기를 누르면 결과 페이지로 이동합니다.
             </p>
 
             {error && <div style={errorBoxStyle}>{error}</div>}
 
-            <Field label="나이" error={fieldErrors.age}>
-              <input
-                name="age"
-                value={form.age}
-                onChange={handleChange}
-                style={inputStyle}
-                placeholder="예: 42"
-              />
-            </Field>
+            <div style={sectionCardStyle}>
+              <div style={sectionMiniTitleStyle}>기본 신체 정보</div>
+            
+              <Field label="나이" error={fieldErrors.age}>
+                <input
+                  name="age"
+                  value={form.age}
+                  onChange={handleChange}
+                  style={inputStyle}
+                  placeholder="예: 42"
+                  inputMode="numeric"
+                />
+              </Field>
+            
+              <Field label="성별" error={fieldErrors.gender}>
+                <select name="gender" value={form.gender} onChange={handleChange} style={inputStyle}>
+                  <option value="">성별을 선택하세요</option>
+                  <option value="male">남성</option>
+                  <option value="female">여성</option>
+                </select>
+              </Field>
+            
+              <Field label="키(cm)" error={fieldErrors.height_cm}>
+                <input
+                  name="height_cm"
+                  value={form.height_cm}
+                  onChange={handleChange}
+                  style={inputStyle}
+                  placeholder="예: 175"
+                  inputMode="decimal"
+                />
+              </Field>
+            
+              <Field label="몸무게(kg)" error={fieldErrors.weight_kg}>
+                <input
+                  name="weight_kg"
+                  value={form.weight_kg}
+                  onChange={handleChange}
+                  style={inputStyle}
+                  placeholder="예: 78"
+                  inputMode="decimal"
+                />
+              </Field>
+            </div>
 
-            <Field label="성별" error={fieldErrors.gender}>
-              <select name="gender" value={form.gender} onChange={handleChange} style={inputStyle}>
-                <option value="male">남성</option>
-                <option value="female">여성</option>
-              </select>
-            </Field>
+            <div style={sectionCardStyle}>
+              <div style={sectionMiniTitleStyle}>생활 습관 정보</div>
+            
+              <Field label="활동량" error={fieldErrors.activity}>
+                <select name="activity" value={form.activity} onChange={handleChange} style={inputStyle}>
+                  <option value="">활동량을 선택하세요</option>
+                  <option value="low">낮음</option>
+                  <option value="medium">보통</option>
+                  <option value="high">높음</option>
+                </select>
+              </Field>
+            
+              <Field label="수면시간" error={fieldErrors.sleep}>
+                <input
+                  name="sleep"
+                  value={form.sleep}
+                  onChange={handleChange}
+                  style={inputStyle}
+                  placeholder="예: 6"
+                  inputMode="numeric"
+                />
+              </Field>
+            
+              <Field label="식사 유형" error={fieldErrors.diet}>
+                <select name="diet" value={form.diet} onChange={handleChange} style={inputStyle}>
+                  <option value="">식사 유형을 선택하세요</option>
+                  <option value="irregular">불규칙</option>
+                  <option value="regular">규칙적</option>
+                  <option value="vegetarian">채식 위주</option>
+                  <option value="high_protein">고단백</option>
+                </select>
+              </Field>
+            </div>
 
-            <Field label="키(cm)" error={fieldErrors.height_cm}>
-              <input
-                name="height_cm"
-                value={form.height_cm}
-                onChange={handleChange}
-                style={inputStyle}
-                placeholder="예: 175"
-              />
-            </Field>
+            <div style={sectionCardStyle}>
+              <div style={sectionMiniTitleStyle}>건강 상태 및 목표</div>
+            
+              <Field label="질환 (쉼표 구분)">
+                <input
+                  name="conditions"
+                  value={form.conditions}
+                  onChange={handleChange}
+                  style={inputStyle}
+                  placeholder="예: 고혈압, 당뇨"
+                />
+              </Field>
+            
+              <Field label="복용약 (쉼표 구분)">
+                <input
+                  name="medications"
+                  value={form.medications}
+                  onChange={handleChange}
+                  style={inputStyle}
+                  placeholder="예: 혈압약"
+                />
+              </Field>
+            
+              <Field label="건강 목표" error={fieldErrors.goal}>
+                <select name="goal" value={form.goal} onChange={handleChange} style={inputStyle}>
+                  <option value="">건강 목표를 선택하세요</option>
+                  <option value="피로 관리">피로 관리</option>
+                  <option value="면역 관리">면역 관리</option>
+                  <option value="수면 관리">수면 관리</option>
+                  <option value="체중 관리">체중 관리</option>
+                  <option value="운동 보조">운동 보조</option>
+                </select>
+              </Field>
+            </div>
 
-            <Field label="몸무게(kg)" error={fieldErrors.weight_kg}>
-              <input
-                name="weight_kg"
-                value={form.weight_kg}
-                onChange={handleChange}
-                style={inputStyle}
-                placeholder="예: 78"
-              />
-            </Field>
-
-            <Field label="활동량" error={fieldErrors.activity}>
-              <select name="activity" value={form.activity} onChange={handleChange} style={inputStyle}>
-                <option value="">활동량을 선택하세요</option>
-                <option value="low">낮음</option>
-                <option value="medium">보통</option>
-                <option value="high">높음</option>
-              </select>
-            </Field>
-
-            <Field label="수면시간" error={fieldErrors.sleep}>
-              <input
-                name="sleep"
-                value={form.sleep}
-                onChange={handleChange}
-                style={inputStyle}
-                placeholder="예: 6"
-              />
-            </Field>
-
-            <Field label="식사 유형" error={fieldErrors.diet}>
-              <select name="diet" value={form.diet} onChange={handleChange} style={inputStyle}>
-                <option value="">식사 유형을 선택하세요</option>
-                <option value="irregular">불규칙</option>
-                <option value="regular">규칙적</option>
-                <option value="vegetarian">채식 위주</option>
-                <option value="high_protein">고단백</option>
-              </select>
-            </Field>
-
-            <Field label="질환 (쉼표 구분)">
-              <input
-                name="conditions"
-                value={form.conditions}
-                onChange={handleChange}
-                style={inputStyle}
-                placeholder="예: 고혈압, 당뇨"
-              />
-            </Field>
-
-            <Field label="복용약 (쉼표 구분)">
-              <input
-                name="medications"
-                value={form.medications}
-                onChange={handleChange}
-                style={inputStyle}
-                placeholder="예: 혈압약"
-              />
-            </Field>
-
-            <Field label="건강 목표" error={fieldErrors.goal}>
-              <select name="goal" value={form.goal} onChange={handleChange} style={inputStyle}>
-                <option value="">건강 목표를 선택하세요</option>
-                <option value="피로 관리">피로 관리</option>
-                <option value="면역 관리">면역 관리</option>
-                <option value="수면 관리">수면 관리</option>
-                <option value="체중 관리">체중 관리</option>
-                <option value="운동 보조">운동 보조</option>
-              </select>
-            </Field>
-
-            <button onClick={handleSubmit} style={primaryButtonStyle}>
+            <button
+              onClick={handleSubmit}
+              style={{
+                ...primaryButtonStyle,
+                opacity: requiredFieldsFilled ? 1 : 0.55,
+                cursor: requiredFieldsFilled ? "pointer" : "not-allowed",
+              }}
+              disabled={!requiredFieldsFilled || loading}
+            >
               분석하기
             </button>
+                {!requiredFieldsFilled && (
+                  <div style={hintTextStyle}>
+                    필수 항목을 모두 입력하면 분석하기 버튼이 활성화됩니다.
+                  </div>
+                )}
           </div>
         )}
 
@@ -645,6 +722,27 @@ export default function Home() {
   );
 }
 
+function StatusChip({ label, active }) {
+  return (
+    <span
+      style={{
+        display: "inline-flex",
+        alignItems: "center",
+        padding: "8px 12px",
+        borderRadius: 999,
+        fontSize: 13,
+        fontWeight: 800,
+        background: active ? "#dbeafe" : "#f3f4f6",
+        color: active ? "#003876" : "#6b7280",
+        border: active ? "1px solid #bfdbfe" : "1px solid #e5e7eb",
+      }}
+    >
+      {active ? "✓ " : ""}
+      {label}
+    </span>
+  );
+}
+
 function buildRecommendationReasons(form, recommendations) {
   const items = [];
 
@@ -806,6 +904,62 @@ const titleStyle = {
   fontWeight: 900,
   marginBottom: 8,
   color: "#111827",
+};
+
+const progressWrapStyle = {
+  marginBottom: 16,
+};
+
+const progressHeaderStyle = {
+  display: "flex",
+  justifyContent: "space-between",
+  marginBottom: 8,
+  fontSize: 14,
+  fontWeight: 800,
+  color: "#374151",
+};
+
+const progressTrackStyle = {
+  height: 10,
+  background: "#e5e7eb",
+  borderRadius: 999,
+  overflow: "hidden",
+};
+
+const progressFillStyle = {
+  height: "100%",
+  background: "linear-gradient(135deg, #003876 0%, #0a56a8 100%)",
+  borderRadius: 999,
+  transition: "width 0.25s ease",
+};
+
+const chipWrapStyle = {
+  display: "flex",
+  flexWrap: "wrap",
+  gap: 8,
+  marginBottom: 18,
+};
+
+const sectionCardStyle = {
+  background: "#f8fafc",
+  border: "1px solid #e5e7eb",
+  borderRadius: 18,
+  padding: 16,
+  marginBottom: 16,
+};
+
+const sectionMiniTitleStyle = {
+  fontSize: 16,
+  fontWeight: 900,
+  color: "#111827",
+  marginBottom: 12,
+};
+
+const hintTextStyle = {
+  marginTop: 10,
+  fontSize: 13,
+  color: "#6b7280",
+  lineHeight: 1.5,
 };
 
 const descStyle = {
