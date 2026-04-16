@@ -4,9 +4,17 @@ from typing import List
 
 from services.recommender import recommend_nutrients
 from services.naver_api import search_naver_products
+from fastapi.middleware.cors import CORSMiddleware
 
 app = FastAPI(title="AMBA Supplement Recommender API")
 
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 
 class AnalyzeRequest(BaseModel):
     age: int
