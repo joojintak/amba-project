@@ -57,6 +57,10 @@ export default function Home() {
     setResult(null);
 
     try {
+      if (!API_URL) {
+        throw new Error("NEXT_PUBLIC_API_URL 환경변수가 없습니다.");
+      }
+
       const response = await fetch(`${API_URL}/analyze`, {
         method: "POST",
         headers: {
@@ -71,6 +75,11 @@ export default function Home() {
       }
 
       const data = await response.json();
+
+      if (!data || typeof data !== "object") {
+        throw new Error("응답 형식이 올바르지 않습니다.");
+      }
+
       setResult(data);
       setStep("result");
     } catch (err) {
@@ -84,22 +93,89 @@ export default function Home() {
     setStep("form");
   };
 
+  const exportPdf = async () => {
+    try {
+      const reportEl = document.getElementById("analysis-report");
+      if (!reportEl) {
+        throw new Error("리포트 영역을 찾을 수 없습니다.");
+      }
+
+      const [{ default: html2canvas }, { jsPDF }] = await Promise.all([
+        import("html2canvas"),
+        import("jspdf"),
+      ]);
+
+      const hiddenEls = document.querySelectorAll(".no-print");
+
+      hiddenEls.forEach((el) => {
+        el.dataset.originalDisplay = el.style.display || "";
+        el.style.display = "none";
+      });
+
+      const canvas = await html2canvas(reportEl, {
+        scale: 2,
+        useCORS: true,
+        backgroundColor: "#ffffff",
+        scrollY: -window.scrollY,
+      });
+
+      hiddenEls.forEach((el) => {
+        el.style.display = el.dataset.originalDisplay;
+      });
+
+      const imgData = canvas.toDataURL("image/png");
+      const pdf = new jsPDF("p", "mm", "a4");
+
+      const pdfWidth = 210;
+      const pdfHeight = 297;
+
+      const imgWidth = pdfWidth;
+      const imgHeight = (canvas.height * imgWidth) / canvas.width;
+
+      let heightLeft = imgHeight;
+      let position = 0;
+
+      pdf.addImage(imgData, "PNG", 0, position, imgWidth, imgHeight);
+      heightLeft -= pdfHeight;
+
+      while (heightLeft > 0) {
+        position = heightLeft - imgHeight;
+        pdf.addPage();
+        pdf.addImage(imgData, "PNG", 0, position, imgWidth, imgHeight);
+        heightLeft -= pdfHeight;
+      }
+
+      pdf.save("AMBA_분석보고서.pdf");
+    } catch (err) {
+      alert(`PDF 생성 오류: ${err.message}`);
+    }
+  };
+
   const recommendations = Array.isArray(result?.recommendations)
     ? result.recommendations
     : [];
 
-  const profile = result?.profile_summary || {};
+  const profile =
+    result?.profile_summary && typeof result.profile_summary === "object"
+      ? result.profile_summary
+      : {};
+
   const overallInterpretation = Array.isArray(result?.overall_interpretation)
     ? result.overall_interpretation
     : [];
-  const scores = result?.dashboard_scores || {};
+
+  const scores =
+    result?.dashboard_scores && typeof result.dashboard_scores === "object"
+      ? result.dashboard_scores
+      : {};
 
   const recommendationReasons = buildRecommendationReasons(form, recommendations);
+
   const scoreGuide = [
-    "추천 점수: 현재 입력된 생활습관, 건강 목표, 질환 정보 기반 종합 점수",
-    "추천 적합도: 현재 상태에 추천 영양소가 얼마나 잘 맞는지 보여주는 지표",
-    "생활습관 위험도: 수면, 활동량, 식사 패턴 등 생활 요인 중심 위험도",
-    "보완 우선순위: 먼저 관리하면 좋을 항목의 우선 정도",
+    "추천 점수: 현재 생활습관, 건강 목표, 질환 정보를 종합해 계산한 전체 추천 강도입니다.",
+    "추천 적합도: 입력된 상태와 추천 영양소가 얼마나 잘 맞는지 보여주는 지표입니다.",
+    "생활습관 위험도: 수면, 활동량, 식사 패턴 등 생활요인 중심의 관리 필요 수준입니다.",
+    "보완 우선순위: 현재 상태에서 먼저 관리하면 좋은 항목의 선행 순위를 의미합니다.",
   ];
 
   return (
@@ -109,7 +185,7 @@ export default function Home() {
           style={{
             position: "fixed",
             inset: 0,
-            background: "rgba(255,255,255,0.8)",
+            background: "rgba(255,255,255,0.82)",
             display: "flex",
             alignItems: "center",
             justifyContent: "center",
@@ -119,16 +195,16 @@ export default function Home() {
         >
           <div
             style={{
-              width: 52,
-              height: 52,
-              border: "5px solid #dbeafe",
-              borderTop: "5px solid #003876",
+              width: 56,
+              height: 56,
+              border: "6px solid #dbeafe",
+              borderTop: "6px solid #003876",
               borderRadius: "50%",
               animation: "spin 1s linear infinite",
             }}
           />
           <p style={{ marginTop: 16, fontWeight: 800, color: "#003876" }}>
-            건강 정보를 분석 중입니다...
+            건강 정보와 추천 영양소를 분석 중입니다...
           </p>
           <style>{`
             @keyframes spin {
@@ -139,30 +215,30 @@ export default function Home() {
         </div>
       )}
 
-      <div style={{ maxWidth: 900, margin: "0 auto", padding: "20px 16px 40px" }}>
+      <div style={{ maxWidth: 920, margin: "0 auto", padding: "20px 16px 40px" }}>
         <div
           style={{
             background: "linear-gradient(135deg, #003876 0%, #0a56a8 100%)",
             color: "#fff",
-            borderRadius: 22,
+            borderRadius: 24,
             padding: "30px 24px",
-            marginBottom: 22,
-            boxShadow: "0 12px 30px rgba(0,56,118,0.16)",
+            marginBottom: 24,
+            boxShadow: "0 14px 34px rgba(0,56,118,0.16)",
           }}
         >
           <div style={{ fontSize: 30, fontWeight: 900, marginBottom: 10 }}>
             AMBA 영양제 추천 앱
           </div>
           <div style={{ lineHeight: 1.7, opacity: 0.96, fontSize: 15 }}>
-            건강 정보를 기반으로 추천 영양소, 분석 점수, 구매 링크를 제공합니다.
+            건강 정보를 기반으로 추천 영양소, 분석 점수, 상품 링크를 제공합니다.
           </div>
         </div>
 
         {step === "form" && (
-          <div style={cardStyle}>
+          <div style={mainCardStyle}>
             <h2 style={titleStyle}>건강 정보 입력</h2>
             <p style={descStyle}>
-              아래 정보를 입력한 뒤 분석하기를 누르면 결과 페이지에서 전문가형 분석 결과를 볼 수 있습니다.
+              아래 정보를 입력한 뒤 분석하기를 누르면 결과 페이지로 이동합니다.
             </p>
 
             {error && <div style={errorBoxStyle}>{error}</div>}
@@ -232,19 +308,19 @@ export default function Home() {
         )}
 
         {step === "result" && result && (
-          <div style={cardStyle}>
+          <div id="analysis-report" style={mainCardStyle}>
             <h2 style={titleStyle}>분석 결과</h2>
             <p style={descStyle}>
-              입력한 건강 정보와 생활 패턴을 바탕으로 분석한 결과입니다.
+              입력한 건강 정보와 생활 패턴을 바탕으로 구조화된 분석 결과를 정리했습니다.
             </p>
 
-            <div style={{ marginBottom: 16 }}>
+            <div className="no-print" style={{ marginBottom: 16 }}>
               <button onClick={goToForm} style={secondaryButtonStyle}>
                 정보 변경하기
               </button>
             </div>
 
-            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16, marginBottom: 18 }}>
+            <div style={topSummaryGridStyle}>
               <SummaryCard title="BMI" value={String(result?.bmi ?? "-")} />
               <SummaryCard title="체형 분류" value={String(result?.bmi_category ?? "-")} />
             </div>
@@ -252,7 +328,7 @@ export default function Home() {
             <div style={sectionBlockStyle}>
               <div style={sectionHeaderStyle}>핵심 분석 대시보드</div>
 
-              <div style={{ display: "grid", gap: 18 }}>
+              <div style={{ display: "grid", gap: 20 }}>
                 <div style={{ display: "flex", justifyContent: "center" }}>
                   <GaugeCard
                     title="추천 점수"
@@ -275,9 +351,18 @@ export default function Home() {
                   title="보완 우선순위"
                   score={scores.priority_score || 0}
                   badge={scores.priority_badge || "-"}
-                  color="#7c3aed"
+                  fixedColor="#7c3aed"
                 />
               </div>
+            </div>
+
+            <div style={sectionBlockStyle}>
+              <div style={sectionHeaderStyle}>점수 설명 박스</div>
+              <ul style={ulStyle}>
+                {scoreGuide.map((item, idx) => (
+                  <li key={idx} style={liStyle}>{item}</li>
+                ))}
+              </ul>
             </div>
 
             <div style={sectionBlockStyle}>
@@ -290,21 +375,14 @@ export default function Home() {
             </div>
 
             <div style={sectionBlockStyle}>
-              <div style={sectionHeaderStyle}>점수 설명</div>
-              <ul style={ulStyle}>
-                {scoreGuide.map((item, idx) => (
-                  <li key={idx} style={liStyle}>{item}</li>
-                ))}
-              </ul>
-            </div>
-
-            <div style={sectionBlockStyle}>
               <div style={sectionHeaderStyle}>개인 프로필 요약</div>
               <ul style={ulStyle}>
                 <li style={liStyle}>
                   {profile.age || "-"}세 {profile.gender || "-"}, 키 {profile.height_cm || "-"}cm / 몸무게 {profile.weight_kg || "-"}kg
                 </li>
-                <li style={liStyle}>활동량: {profile.activity || "-"}, 수면시간: {profile.sleep || "-"}시간</li>
+                <li style={liStyle}>
+                  활동량: {profile.activity || "-"}, 수면시간: {profile.sleep || "-"}시간
+                </li>
                 <li style={liStyle}>식사 유형: {profile.diet || "-"}</li>
                 <li style={liStyle}>
                   질환 정보: {Array.isArray(profile.conditions) && profile.conditions.length ? profile.conditions.join(", ") : "입력 없음"}
@@ -319,17 +397,25 @@ export default function Home() {
             <div style={sectionBlockStyle}>
               <div style={sectionHeaderStyle}>종합 해석</div>
               <ul style={ulStyle}>
-                {overallInterpretation.map((item, idx) => (
-                  <li key={idx} style={liStyle}>{item}</li>
-                ))}
+                {overallInterpretation.length > 0 ? (
+                  overallInterpretation.map((item, idx) => (
+                    <li key={idx} style={liStyle}>{item}</li>
+                  ))
+                ) : (
+                  <li style={liStyle}>종합 해석 정보가 없습니다.</li>
+                )}
               </ul>
             </div>
 
+            {recommendations.length === 0 && (
+              <div style={errorBoxStyle}>추천 결과가 비어 있습니다.</div>
+            )}
+
             {recommendations.map((rec, idx) => (
               <div key={idx} style={recommendCardStyle}>
-                <div style={{ display: "flex", alignItems: "center", gap: 10, flexWrap: "wrap", marginBottom: 12 }}>
+                <div style={recommendTitleRowStyle}>
                   <div style={rankBadgeStyle}>우선순위 {idx + 1}</div>
-                  <div style={{ fontSize: 24, fontWeight: 800 }}>{rec?.nutrient || "추천 영양소"}</div>
+                  <div style={{ fontSize: 24, fontWeight: 900 }}>{rec?.nutrient || "추천 영양소"}</div>
                   <div style={smallScoreBadgeStyle}>점수 {rec?.score ?? "-"}</div>
                 </div>
 
@@ -340,33 +426,26 @@ export default function Home() {
 
                 <div style={subSectionStyle}>
                   <div style={subSectionHeaderStyle}>추천 상품</div>
-                  <div style={{ display: "grid", gridTemplateColumns: "1fr", gap: 12, marginTop: 12 }}>
+                  <div style={productGridStyle}>
                     {(Array.isArray(rec?.sample_products) ? rec.sample_products : []).map((p, i) => (
                       <div key={i} style={productCardStyle}>
                         {p?.image_url ? (
                           <img
                             src={p.image_url}
                             alt={p?.title || "product"}
-                            style={{
-                              width: "100%",
-                              height: 180,
-                              objectFit: "contain",
-                              borderRadius: 10,
-                              background: "#fff",
-                              marginBottom: 12,
-                            }}
+                            style={productImageStyle}
                           />
                         ) : null}
 
-                        <div style={{ fontWeight: 800, fontSize: 16, marginBottom: 8, lineHeight: 1.5 }}>
+                        <div style={productTitleStyle}>
                           {p?.title || "상품명 없음"}
                         </div>
 
-                        <div style={{ color: "#6b7280", marginBottom: 6 }}>
+                        <div style={productMallStyle}>
                           판매처: {p?.mall_name || "-"}
                         </div>
 
-                        <div style={{ fontSize: 18, fontWeight: 800, marginBottom: 12 }}>
+                        <div style={productPriceStyle}>
                           {typeof p?.price_krw !== "undefined" ? `${p.price_krw}원` : "-"}
                         </div>
 
@@ -375,16 +454,7 @@ export default function Home() {
                             href={p.url}
                             target="_blank"
                             rel="noreferrer"
-                            style={{
-                              display: "block",
-                              textAlign: "center",
-                              padding: "12px 14px",
-                              borderRadius: 12,
-                              background: "#003876",
-                              color: "#fff",
-                              textDecoration: "none",
-                              fontWeight: 800,
-                            }}
+                            style={buyButtonStyle}
                           >
                             구매 링크
                           </a>
@@ -396,9 +466,15 @@ export default function Home() {
               </div>
             ))}
 
-            <div style={{ marginBottom: 14 }}>
+            <div
+              className="no-print"
+              style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12, marginBottom: 14 }}
+            >
               <button onClick={goToForm} style={secondaryButtonStyle}>
                 정보 변경하기
+              </button>
+              <button onClick={exportPdf} style={darkButtonStyle}>
+                PDF 리포트 다운로드
               </button>
             </div>
 
@@ -434,13 +510,13 @@ function buildRecommendationReasons(form, recommendations) {
     items.push("식사 패턴이 불규칙하여 기본 영양 균형 보완 필요성이 높아질 수 있습니다.");
   }
   if (form.conditions) {
-    items.push(`입력한 질환 정보(${form.conditions})를 반영하여 추천 우선순위를 조정했습니다.`);
+    items.push(`입력한 질환 정보(${form.conditions})를 반영해 추천 우선순위를 조정했습니다.`);
   }
   if (form.goal) {
-    items.push(`건강 목표인 "${form.goal}"을 중심으로 추천 적합도를 계산했습니다.`);
+    items.push(`건강 목표인 "${form.goal}"을 중심으로 적합도와 우선순위를 계산했습니다.`);
   }
   if (recommendations.length > 0) {
-    items.push(`현재 입력 조건 기준 상위 추천 영양소는 ${recommendations.map(r => r.nutrient).join(", ")} 입니다.`);
+    items.push(`현재 입력 조건 기준 상위 추천 영양소는 ${recommendations.map((r) => r.nutrient).join(", ")} 입니다.`);
   }
 
   return items.length ? items : ["입력된 정보를 기준으로 기본 생활 패턴형 분석을 수행했습니다."];
@@ -474,25 +550,27 @@ function InfoRow({ label, value }) {
 
 function GaugeCard({ title, score, badge }) {
   const safeScore = Math.max(0, Math.min(100, Number(score || 0)));
+
   return (
     <div style={{ textAlign: "center" }}>
       <div style={{ fontWeight: 800, fontSize: 18, marginBottom: 12 }}>{title}</div>
       <div
         style={{
-          width: 160,
-          height: 160,
+          width: 170,
+          height: 170,
           borderRadius: "50%",
           background: `conic-gradient(#003876 ${safeScore * 3.6}deg, #e5e7eb 0deg)`,
           display: "flex",
           alignItems: "center",
           justifyContent: "center",
           margin: "0 auto 12px",
+          boxShadow: "0 8px 18px rgba(0,56,118,0.12)",
         }}
       >
         <div
           style={{
-            width: 118,
-            height: 118,
+            width: 126,
+            height: 126,
             borderRadius: "50%",
             background: "#fff",
             display: "flex",
@@ -502,18 +580,18 @@ function GaugeCard({ title, score, badge }) {
             boxShadow: "inset 0 0 0 1px #e5e7eb",
           }}
         >
-          <div style={{ fontSize: 30, fontWeight: 900, color: "#003876" }}>{safeScore}</div>
+          <div style={{ fontSize: 32, fontWeight: 900, color: "#003876" }}>{safeScore}</div>
           <div style={{ fontSize: 13, color: "#6b7280" }}>점</div>
         </div>
       </div>
-      <Badge text={badge} />
+      <Badge text={badge} color={getRiskColor(safeScore)} />
     </div>
   );
 }
 
-function ScoreRow({ title, score, badge, color }) {
+function ScoreRow({ title, score, badge, fixedColor }) {
   const safeScore = Math.max(0, Math.min(100, Number(score || 0)));
-  const barColor = color || getRiskColor(safeScore);
+  const barColor = fixedColor || getRiskColor(safeScore);
 
   return (
     <div>
@@ -524,14 +602,7 @@ function ScoreRow({ title, score, badge, color }) {
           <Badge text={badge} color={barColor} />
         </div>
       </div>
-      <div
-        style={{
-          height: 14,
-          background: "#e5e7eb",
-          borderRadius: 999,
-          overflow: "hidden",
-        }}
-      >
+      <div style={scoreTrackStyle}>
         <div
           style={{
             width: `${safeScore}%`,
@@ -551,7 +622,7 @@ function Badge({ text, color = "#003876" }) {
         display: "inline-block",
         padding: "6px 10px",
         borderRadius: 999,
-        background: "#eef4ff",
+        background: `${color}15`,
         color,
         fontWeight: 800,
         fontSize: 13,
@@ -568,17 +639,17 @@ function getRiskColor(score) {
   return "#15803d";
 }
 
-const cardStyle = {
+const mainCardStyle = {
   background: "#ffffff",
   border: "1px solid #e5e7eb",
-  borderRadius: 18,
-  padding: 18,
-  boxShadow: "0 2px 10px rgba(0,0,0,0.04)",
+  borderRadius: 22,
+  padding: 20,
+  boxShadow: "0 6px 18px rgba(0,0,0,0.05)",
 };
 
 const titleStyle = {
-  fontSize: 24,
-  fontWeight: 800,
+  fontSize: 26,
+  fontWeight: 900,
   marginBottom: 8,
   color: "#111827",
 };
@@ -587,20 +658,20 @@ const descStyle = {
   color: "#6b7280",
   fontSize: 15,
   marginBottom: 20,
-  lineHeight: 1.5,
+  lineHeight: 1.6,
 };
 
 const fieldCardStyle = {
   background: "#f9fafb",
   border: "1px solid #e5e7eb",
-  borderRadius: 14,
+  borderRadius: 16,
   padding: 14,
   marginBottom: 14,
 };
 
 const labelStyle = {
   display: "block",
-  fontWeight: 700,
+  fontWeight: 800,
   fontSize: 15,
   color: "#111827",
   marginBottom: 8,
@@ -623,9 +694,10 @@ const primaryButtonStyle = {
   border: "none",
   background: "#003876",
   color: "#fff",
-  fontWeight: 800,
+  fontWeight: 900,
   fontSize: 16,
   cursor: "pointer",
+  boxShadow: "0 8px 18px rgba(0,56,118,0.18)",
 };
 
 const secondaryButtonStyle = {
@@ -635,7 +707,19 @@ const secondaryButtonStyle = {
   border: "1px solid #d1d5db",
   background: "#fff",
   color: "#111827",
-  fontWeight: 700,
+  fontWeight: 800,
+  fontSize: 15,
+  cursor: "pointer",
+};
+
+const darkButtonStyle = {
+  width: "100%",
+  padding: "14px 16px",
+  borderRadius: 12,
+  border: "none",
+  background: "#111827",
+  color: "#fff",
+  fontWeight: 800,
   fontSize: 15,
   cursor: "pointer",
 };
@@ -652,7 +736,7 @@ const errorBoxStyle = {
 
 const sectionBlockStyle = {
   border: "1px solid #e5e7eb",
-  borderRadius: 14,
+  borderRadius: 16,
   padding: 16,
   background: "#fafafa",
   marginBottom: 18,
@@ -660,7 +744,7 @@ const sectionBlockStyle = {
 
 const sectionHeaderStyle = {
   fontSize: 18,
-  fontWeight: 800,
+  fontWeight: 900,
   marginBottom: 12,
   color: "#111827",
 };
@@ -672,22 +756,69 @@ const ulStyle = {
 
 const liStyle = {
   marginBottom: 8,
-  lineHeight: 1.6,
+  lineHeight: 1.65,
 };
 
 const recommendCardStyle = {
   border: "1px solid #e5e7eb",
-  borderRadius: 16,
+  borderRadius: 18,
   padding: 16,
   marginBottom: 18,
   background: "#fafafa",
+  boxShadow: "0 4px 10px rgba(0,0,0,0.03)",
+};
+
+const productGridStyle = {
+  display: "grid",
+  gridTemplateColumns: "1fr",
+  gap: 12,
+  marginTop: 12,
 };
 
 const productCardStyle = {
   border: "1px solid #ddd",
-  borderRadius: 14,
+  borderRadius: 16,
   padding: 14,
   background: "#fff",
+  boxShadow: "0 3px 10px rgba(0,0,0,0.03)",
+};
+
+const productImageStyle = {
+  width: "100%",
+  height: 180,
+  objectFit: "contain",
+  borderRadius: 12,
+  background: "#fff",
+  marginBottom: 12,
+};
+
+const productTitleStyle = {
+  fontWeight: 900,
+  fontSize: 16,
+  marginBottom: 8,
+  lineHeight: 1.5,
+};
+
+const productMallStyle = {
+  color: "#6b7280",
+  marginBottom: 6,
+};
+
+const productPriceStyle = {
+  fontSize: 18,
+  fontWeight: 900,
+  marginBottom: 12,
+};
+
+const buyButtonStyle = {
+  display: "block",
+  textAlign: "center",
+  padding: "12px 14px",
+  borderRadius: 12,
+  background: "#003876",
+  color: "#fff",
+  textDecoration: "none",
+  fontWeight: 900,
 };
 
 const rankBadgeStyle = {
@@ -696,7 +827,7 @@ const rankBadgeStyle = {
   borderRadius: 999,
   background: "#dbeafe",
   color: "#003876",
-  fontWeight: 800,
+  fontWeight: 900,
   fontSize: 13,
 };
 
@@ -706,15 +837,30 @@ const smallScoreBadgeStyle = {
   borderRadius: 999,
   background: "#ede9fe",
   color: "#6d28d9",
-  fontWeight: 800,
+  fontWeight: 900,
   fontSize: 13,
 };
 
 const summaryCardStyle = {
   background: "#f9fafb",
-  borderRadius: 14,
-  padding: 14,
+  borderRadius: 16,
+  padding: 16,
   border: "1px solid #e5e7eb",
+};
+
+const topSummaryGridStyle = {
+  display: "grid",
+  gridTemplateColumns: "1fr 1fr",
+  gap: 16,
+  marginBottom: 18,
+};
+
+const recommendTitleRowStyle = {
+  display: "flex",
+  alignItems: "center",
+  gap: 10,
+  flexWrap: "wrap",
+  marginBottom: 12,
 };
 
 const subSectionStyle = {
@@ -725,7 +871,14 @@ const subSectionStyle = {
 
 const subSectionHeaderStyle = {
   fontSize: 16,
-  fontWeight: 800,
+  fontWeight: 900,
   marginBottom: 8,
   color: "#111827",
+};
+
+const scoreTrackStyle = {
+  height: 14,
+  background: "#e5e7eb",
+  borderRadius: 999,
+  overflow: "hidden",
 };
