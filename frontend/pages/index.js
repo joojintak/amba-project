@@ -43,16 +43,16 @@ export default function Home() {
 
   
   const [form, setForm] = useState({
-    age: "42",
-    gender: "male",
-    height_cm: "175",
-    weight_kg: "78",
-    activity: "low",
-    sleep: "5",
-    diet: "irregular",
-    conditions: "고혈압",
-    medications: "혈압약",
-    goal: "피로 관리",
+    age: "",
+    gender: "",
+    height_cm: "",
+    weight_kg: "",
+    activity: "",
+    sleep: "",
+    diet: "",
+    conditions: "",
+    medications: "",
+    goal: "",
   });
 
   useEffect(() => {
@@ -279,7 +279,13 @@ export default function Home() {
             {error && <div style={errorBoxStyle}>{error}</div>}
 
             <Field label="나이">
-              <input name="age" value={form.age} onChange={handleChange} style={inputStyle} />
+              <input
+                name="age"
+                value={form.age}
+                onChange={handleChange}
+                style={inputStyle}
+                placeholder="예: 42"
+              />
             </Field>
 
             <Field label="성별">
@@ -290,15 +296,28 @@ export default function Home() {
             </Field>
 
             <Field label="키(cm)">
-              <input name="height_cm" value={form.height_cm} onChange={handleChange} style={inputStyle} />
+              <input
+                name="height_cm"
+                value={form.height_cm}
+                onChange={handleChange}
+                style={inputStyle}
+                placeholder="예: 175"
+              />
             </Field>
 
             <Field label="몸무게(kg)">
-              <input name="weight_kg" value={form.weight_kg} onChange={handleChange} style={inputStyle} />
+              <input
+                name="weight_kg"
+                value={form.weight_kg}
+                onChange={handleChange}
+                style={inputStyle}
+                placeholder="예: 78"
+              />
             </Field>
 
             <Field label="활동량">
               <select name="activity" value={form.activity} onChange={handleChange} style={inputStyle}>
+                <option value="">활동량을 선택하세요</option>
                 <option value="low">낮음</option>
                 <option value="medium">보통</option>
                 <option value="high">높음</option>
@@ -306,11 +325,18 @@ export default function Home() {
             </Field>
 
             <Field label="수면시간">
-              <input name="sleep" value={form.sleep} onChange={handleChange} style={inputStyle} />
+              <input
+                name="sleep"
+                value={form.sleep}
+                onChange={handleChange}
+                style={inputStyle}
+                placeholder="예: 6"
+              />
             </Field>
 
             <Field label="식사 유형">
               <select name="diet" value={form.diet} onChange={handleChange} style={inputStyle}>
+                <option value="">식사 유형을 선택하세요</option>
                 <option value="irregular">불규칙</option>
                 <option value="regular">규칙적</option>
                 <option value="vegetarian">채식 위주</option>
@@ -319,15 +345,28 @@ export default function Home() {
             </Field>
 
             <Field label="질환 (쉼표 구분)">
-              <input name="conditions" value={form.conditions} onChange={handleChange} style={inputStyle} />
+              <input
+                name="conditions"
+                value={form.conditions}
+                onChange={handleChange}
+                style={inputStyle}
+                placeholder="예: 고혈압, 당뇨"
+              />
             </Field>
 
             <Field label="복용약 (쉼표 구분)">
-              <input name="medications" value={form.medications} onChange={handleChange} style={inputStyle} />
+              <input
+                name="medications"
+                value={form.medications}
+                onChange={handleChange}
+                style={inputStyle}
+                placeholder="예: 혈압약"
+              />
             </Field>
 
             <Field label="건강 목표">
               <select name="goal" value={form.goal} onChange={handleChange} style={inputStyle}>
+                <option value="">건강 목표를 선택하세요</option>
                 <option value="피로 관리">피로 관리</option>
                 <option value="면역 관리">면역 관리</option>
                 <option value="수면 관리">수면 관리</option>
@@ -557,6 +596,17 @@ export default function Home() {
           </div>
         )}
       </div>
+        <style jsx global>{`
+          input::placeholder {
+            color: #9ca3af;
+          }
+        `}</style>  
+        <style jsx global>{`
+          input::placeholder,
+          textarea::placeholder {
+            color: #9ca3af;
+          }
+        `}</style>
     </div>
   );
 }
