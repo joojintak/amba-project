@@ -1,155 +1,149 @@
-import { useState } from 'react';
-
-const initialForm = {
-  age: 35,
-  gender: 'male',
-  height_cm: 175,
-  weight_kg: 75,
-  activity_level: 'low',
-  sleep_hours: 5,
-  diet_type: 'balanced',
-  smoking: false,
-  drinking: false,
-  conditions: '고혈압',
-  medications: '',
-  goal: '피로 관리'
-};
+import { useState } from "react";
 
 export default function Home() {
-  const [form, setForm] = useState(initialForm);
+  const API_URL = process.env.NEXT_PUBLIC_API_URL;
+
+  const [form, setForm] = useState({
+    age: 42,
+    gender: "male",
+    height_cm: 175,
+    weight_kg: 78,
+    activity: "low",
+    sleep: 5,
+    diet: "irregular",
+    conditions: "고혈압",
+    medications: "혈압약",
+    goal: "피로 관리",
+  });
+
   const [result, setResult] = useState(null);
+  const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState('');
 
   const handleChange = (e) => {
-    const { name, value, type, checked } = e.target;
-    setForm((prev) => ({
-      ...prev,
-      [name]: type === 'checkbox' ? checked : value,
-    }));
+    setForm({
+      ...form,
+      [e.target.name]: e.target.value,
+    });
   };
 
-  const submit = async (e) => {
-    e.preventDefault();
+  const handleSubmit = async () => {
     setLoading(true);
-    setError('');
+    setError("");
     setResult(null);
-    try {
-      const payload = {
-        ...form,
-        age: Number(form.age),
-        height_cm: Number(form.height_cm),
-        weight_kg: Number(form.weight_kg),
-        sleep_hours: Number(form.sleep_hours),
-        conditions: form.conditions ? form.conditions.split(',').map((v) => v.trim()).filter(Boolean) : [],
-        medications: form.medications ? form.medications.split(',').map((v) => v.trim()).filter(Boolean) : [],
-      };
 
-      const res = await fetch('http://127.0.0.1:8000/analyze', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+    const payload = {
+      age: Number(form.age),
+      gender: form.gender,
+      height_cm: Number(form.height_cm),
+      weight_kg: Number(form.weight_kg),
+      activity: form.activity,
+      sleep: Number(form.sleep),
+      diet: form.diet,
+      conditions: form.conditions
+        ? form.conditions.split(",").map((v) => v.trim()).filter(Boolean)
+        : [],
+      medications: form.medications
+        ? form.medications.split(",").map((v) => v.trim()).filter(Boolean)
+        : [],
+      goal: form.goal,
+    };
+
+    try {
+      const response = await fetch(`${API_URL}/analyze`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
         body: JSON.stringify(payload),
       });
 
-      if (!res.ok) {
-        throw new Error('분석 요청에 실패했습니다.');
+      if (!response.ok) {
+        throw new Error(`API 오류: ${response.status}`);
       }
-      const data = await res.json();
+
+      const data = await response.json();
       setResult(data);
     } catch (err) {
-      setError(err.message || '오류가 발생했습니다.');
+      setError(`요청 실패: ${err.message}`);
     } finally {
       setLoading(false);
     }
   };
 
   return (
-    <div className="container">
-      <div className="hero">
-        <h1>AMBA 영양제 추천 앱</h1>
-        <p>건강 정보 입력 후 추천 영양소와 구매 링크를 확인하세요.</p>
-      </div>
+    <div style={{ maxWidth: 1200, margin: "0 auto", padding: 24 }}>
+      <h1>AMBA 영양제 추천 앱</h1>
+      <p>건강 정보를 입력 후 추천 영양소와 구매 링크를 확인하세요.</p>
 
-      <div className="grid">
-        <form className="card" onSubmit={submit}>
+      <div style={{ display: "flex", gap: 24, alignItems: "flex-start" }}>
+        <div style={{ flex: 1, border: "1px solid #ddd", padding: 16, borderRadius: 8 }}>
           <h2>건강 정보 입력</h2>
-          <div className="field-row">
-            <label>나이<input name="age" type="number" value={form.age} onChange={handleChange} /></label>
-            <label>성별
-              <select name="gender" value={form.gender} onChange={handleChange}>
-                <option value="male">남성</option>
-                <option value="female">여성</option>
-              </select>
-            </label>
-          </div>
-          <div className="field-row">
-            <label>키(cm)<input name="height_cm" type="number" value={form.height_cm} onChange={handleChange} /></label>
-            <label>몸무게(kg)<input name="weight_kg" type="number" value={form.weight_kg} onChange={handleChange} /></label>
-          </div>
-          <div className="field-row">
-            <label>활동량
-              <select name="activity_level" value={form.activity_level} onChange={handleChange}>
-                <option value="low">낮음</option>
-                <option value="moderate">보통</option>
-                <option value="high">높음</option>
-              </select>
-            </label>
-            <label>수면시간<input name="sleep_hours" type="number" step="0.5" value={form.sleep_hours} onChange={handleChange} /></label>
-          </div>
-          <label>식사 유형
-            <select name="diet_type" value={form.diet_type} onChange={handleChange}>
-              <option value="balanced">균형식</option>
-              <option value="vegetarian">채식</option>
-              <option value="vegan">비건</option>
-              <option value="irregular">불규칙 식사</option>
-            </select>
-          </label>
-          <label>현재 질환(쉼표로 구분)
-            <input name="conditions" value={form.conditions} onChange={handleChange} placeholder="예: 고혈압, 고지혈증" />
-          </label>
-          <label>복용약(쉼표로 구분)
-            <input name="medications" value={form.medications} onChange={handleChange} placeholder="예: 혈압약" />
-          </label>
-          <label>건강 목표
-            <input name="goal" value={form.goal} onChange={handleChange} placeholder="예: 피로 관리" />
-          </label>
-          <div className="check-row">
-            <label><input name="smoking" type="checkbox" checked={form.smoking} onChange={handleChange} /> 흡연</label>
-            <label><input name="drinking" type="checkbox" checked={form.drinking} onChange={handleChange} /> 음주</label>
-          </div>
-          <button type="submit" disabled={loading}>{loading ? '분석 중...' : '분석하기'}</button>
-          {error && <p className="error">{error}</p>}
-        </form>
 
-        <div className="card">
+          <div><label>나이</label><input name="age" value={form.age} onChange={handleChange} /></div>
+          <div><label>성별</label><input name="gender" value={form.gender} onChange={handleChange} /></div>
+          <div><label>키(cm)</label><input name="height_cm" value={form.height_cm} onChange={handleChange} /></div>
+          <div><label>몸무게(kg)</label><input name="weight_kg" value={form.weight_kg} onChange={handleChange} /></div>
+          <div><label>활동량</label><input name="activity" value={form.activity} onChange={handleChange} /></div>
+          <div><label>수면시간</label><input name="sleep" value={form.sleep} onChange={handleChange} /></div>
+          <div><label>식사 유형</label><input name="diet" value={form.diet} onChange={handleChange} /></div>
+          <div><label>질환(쉼표 구분)</label><input name="conditions" value={form.conditions} onChange={handleChange} /></div>
+          <div><label>복용약(쉼표 구분)</label><input name="medications" value={form.medications} onChange={handleChange} /></div>
+          <div><label>건강 목표</label><input name="goal" value={form.goal} onChange={handleChange} /></div>
+
+          <button onClick={handleSubmit} style={{ marginTop: 16 }}>
+            분석하기
+          </button>
+        </div>
+
+        <div style={{ flex: 1, border: "1px solid #ddd", padding: 16, borderRadius: 8 }}>
           <h2>분석 결과</h2>
-          {!result && <p>왼쪽 입력 후 분석하기를 눌러 주세요.</p>}
+
+          {loading && <p>분석 중입니다...</p>}
+          {error && <p style={{ color: "red" }}>{error}</p>}
+
+          {!loading && !error && !result && (
+            <p>왼쪽 입력 후 분석하기를 눌러 주세요.</p>
+          )}
+
           {result && (
             <div>
-              <p><strong>BMI:</strong> {result.bmi} ({result.bmi_category})</p>
-              <p className="disclaimer">{result.disclaimer}</p>
-              {result.recommendations.map((item) => (
-                <div key={item.nutrient} className="result-card">
-                  <h3>{item.nutrient}</h3>
-                  <p><strong>추천 이유:</strong> {item.reason}</p>
-                  <p><strong>식품 예시:</strong> {item.food_sources.join(', ')}</p>
+              <p><strong>BMI:</strong> {result.bmi}</p>
+              <p><strong>BMI 분류:</strong> {result.bmi_category}</p>
+
+              {result.recommendations?.map((rec, idx) => (
+                <div
+                  key={idx}
+                  style={{
+                    border: "1px solid #ccc",
+                    borderRadius: 8,
+                    padding: 12,
+                    marginBottom: 16,
+                  }}
+                >
+                  <h3>{rec.nutrient}</h3>
+                  <p><strong>추천 이유:</strong> {rec.reason}</p>
+                  <p><strong>식품 소스:</strong> {rec.food_sources?.join(", ")}</p>
+                  <p><strong>주의사항:</strong> {rec.cautions?.join(", ")}</p>
+
+                  <h4>추천 상품</h4>
                   <ul>
-                    {item.cautions.map((c, idx) => <li key={idx}>{c}</li>)}
-                  </ul>
-                  <div className="products">
-                    {item.sample_products.map((p) => (
-                      <a key={p.title} href={p.url} target="_blank" rel="noreferrer" className="product">
-                        <img src={p.image_url} alt={p.title} />
-                        <div>
-                          <strong>{p.title}</strong>
-                          <p>{p.mall_name}</p>
-                          <p>{p.price_krw.toLocaleString()}원</p>
-                        </div>
-                      </a>
+                    {rec.sample_products?.map((p, pIdx) => (
+                      <li key={pIdx} style={{ marginBottom: 8 }}>
+                        <a href={p.url} target="_blank" rel="noreferrer">
+                          {p.title}
+                        </a>
+                        {" / "}
+                        {p.mall_name}
+                        {" / "}
+                        {p.price_krw}원
+                      </li>
                     ))}
-                  </div>
+                  </ul>
                 </div>
               ))}
+
+              <p style={{ fontSize: 12, color: "#666" }}>{result.disclaimer}</p>
             </div>
           )}
         </div>
