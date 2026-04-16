@@ -9,6 +9,31 @@ export default function Home() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [result, setResult] = useState(null);
+  const [fieldErrors, setFieldErrors] = useState({});
+
+  const validateForm = () => {
+    const errors = {};
+  
+    if (!form.age) errors.age = "나이를 입력해주세요";
+    if (!form.gender) errors.gender = "성별을 선택해주세요";
+    if (!form.height_cm) errors.height_cm = "키를 입력해주세요";
+    if (!form.weight_kg) errors.weight_kg = "몸무게를 입력해주세요";
+    if (!form.activity) errors.activity = "활동량을 선택해주세요";
+    if (!form.sleep) errors.sleep = "수면시간을 입력해주세요";
+    if (!form.diet) errors.diet = "식사 유형을 선택해주세요";
+    if (!form.goal) errors.goal = "건강 목표를 선택해주세요";
+  
+    // 숫자 검증
+    if (form.age && isNaN(form.age)) errors.age = "숫자로 입력해주세요";
+    if (form.height_cm && isNaN(form.height_cm)) errors.height_cm = "숫자로 입력해주세요";
+    if (form.weight_kg && isNaN(form.weight_kg)) errors.weight_kg = "숫자로 입력해주세요";
+    if (form.sleep && isNaN(form.sleep)) errors.sleep = "숫자로 입력해주세요";
+  
+    setFieldErrors(errors);
+  
+    return Object.keys(errors).length === 0;
+  };
+
   
   const goBack = () => {
     if (step === "result") {
@@ -62,9 +87,16 @@ export default function Home() {
   }, [step]);
 
   const handleChange = (e) => {
+    const { name, value } = e.target;
+  
     setForm((prev) => ({
       ...prev,
-      [e.target.name]: e.target.value,
+      [name]: value,
+    }));
+  
+    setFieldErrors((prev) => ({
+      ...prev,
+      [name]: "",
     }));
   };
 
@@ -86,6 +118,8 @@ export default function Home() {
   });
 
   const handleSubmit = async () => {
+    if (!validateForm()) return;
+    
     setLoading(true);
     setError("");
     setResult(null);
@@ -278,7 +312,7 @@ export default function Home() {
 
             {error && <div style={errorBoxStyle}>{error}</div>}
 
-            <Field label="나이">
+            <Field label="나이" error={fieldErrors.age}>
               <input
                 name="age"
                 value={form.age}
@@ -288,14 +322,14 @@ export default function Home() {
               />
             </Field>
 
-            <Field label="성별">
+            <Field label="성별" error={fieldErrors.gender}>
               <select name="gender" value={form.gender} onChange={handleChange} style={inputStyle}>
                 <option value="male">남성</option>
                 <option value="female">여성</option>
               </select>
             </Field>
 
-            <Field label="키(cm)">
+            <Field label="키(cm)" error={fieldErrors.height_cm}>
               <input
                 name="height_cm"
                 value={form.height_cm}
@@ -305,7 +339,7 @@ export default function Home() {
               />
             </Field>
 
-            <Field label="몸무게(kg)">
+            <Field label="몸무게(kg)" error={fieldErrors.weight_kg}>
               <input
                 name="weight_kg"
                 value={form.weight_kg}
@@ -315,7 +349,7 @@ export default function Home() {
               />
             </Field>
 
-            <Field label="활동량">
+            <Field label="활동량" error={fieldErrors.activity}>
               <select name="activity" value={form.activity} onChange={handleChange} style={inputStyle}>
                 <option value="">활동량을 선택하세요</option>
                 <option value="low">낮음</option>
@@ -324,7 +358,7 @@ export default function Home() {
               </select>
             </Field>
 
-            <Field label="수면시간">
+            <Field label="수면시간" error={fieldErrors.sleep}>
               <input
                 name="sleep"
                 value={form.sleep}
@@ -334,7 +368,7 @@ export default function Home() {
               />
             </Field>
 
-            <Field label="식사 유형">
+            <Field label="식사 유형" error={fieldErrors.diet}>
               <select name="diet" value={form.diet} onChange={handleChange} style={inputStyle}>
                 <option value="">식사 유형을 선택하세요</option>
                 <option value="irregular">불규칙</option>
@@ -364,7 +398,7 @@ export default function Home() {
               />
             </Field>
 
-            <Field label="건강 목표">
+            <Field label="건강 목표" error={fieldErrors.goal}>
               <select name="goal" value={form.goal} onChange={handleChange} style={inputStyle}>
                 <option value="">건강 목표를 선택하세요</option>
                 <option value="피로 관리">피로 관리</option>
@@ -636,11 +670,17 @@ function buildRecommendationReasons(form, recommendations) {
   return items.length ? items : ["입력된 정보를 기준으로 기본 생활 패턴형 분석을 수행했습니다."];
 }
 
-function Field({ label, children }) {
+function Field({ label, children, error }) {
   return (
     <div style={fieldCardStyle}>
       <label style={labelStyle}>{label}</label>
       {children}
+
+      {error && (
+        <div style={fieldErrorStyle}>
+          {error}
+        </div>
+      )}
     </div>
   );
 }
