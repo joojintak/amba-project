@@ -1,3 +1,4 @@
+import re
 import os
 import requests
 
@@ -5,6 +6,8 @@ NAVER_CLIENT_ID = os.getenv("NAVER_CLIENT_ID", "").strip()
 NAVER_CLIENT_SECRET = os.getenv("NAVER_CLIENT_SECRET", "").strip()
 USE_NAVER_API = os.getenv("USE_NAVER_API", "false").strip().lower() == "true"
 
+def clean_html(text: str) -> str:
+    return re.sub(r"<.*?>", "", text)
 
 def sample_products(query: str):
     return [
@@ -76,7 +79,7 @@ def search_naver_products(query: str):
                 price_krw = 0
 
             results.append({
-                "title": item.get("title", ""),
+                "title": clean_html(item.get("title", "")),
                 "mall_name": item.get("mallName", ""),
                 "price_krw": price_krw,
                 "url": item.get("link", ""),
