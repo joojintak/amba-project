@@ -9,6 +9,15 @@ export default function Home() {
   const [error, setError] = useState("");
   const [result, setResult] = useState(null);
 
+  const goBack = () => {
+    if (step === "result" && resultPage === "products") {
+      // 추천 → 요약
+      goToSummary();
+    } else if (step === "result" && resultPage === "summary") {
+      // 요약 → 입력
+      setStep("form");
+    }
+  };
   const [form, setForm] = useState({
     age: "42",
     gender: "male",
@@ -419,8 +428,8 @@ export default function Home() {
                     영양제 추천
                   </button>
         
-                  <button onClick={goToForm} style={secondaryButtonStyle}>
-                    정보변경하기
+                  <button onClick={goBack} style={secondaryButtonStyle}>
+                    ← 뒤로
                   </button>
                 </div>
               </>
@@ -509,8 +518,8 @@ export default function Home() {
                   className="no-print"
                   style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12, marginBottom: 14 }}
                 >
-                  <button onClick={goToForm} style={secondaryButtonStyle}>
-                    정보변경하기
+                  <button onClick={goBack} style={secondaryButtonStyle}>
+                    ← 뒤로
                   </button>
                   <button onClick={exportPdf} style={darkButtonStyle}>
                     PDF 리포트 다운로드
