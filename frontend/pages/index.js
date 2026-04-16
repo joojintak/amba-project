@@ -10,12 +10,14 @@ export default function Home() {
   const [result, setResult] = useState(null);
 
   const goBack = () => {
-    if (step === "result" && resultPage === "products") {
-      // 추천 → 요약
-      goToSummary();
-    } else if (step === "result" && resultPage === "summary") {
-      // 요약 → 입력
-      setStep("form");
+    if (step === "result") {
+      if (resultPage === "products") {
+        setResultPage("summary");
+        window.scrollTo({ top: 0, behavior: "smooth" });
+      } else if (resultPage === "summary") {
+        setStep("form");
+        window.scrollTo({ top: 0, behavior: "smooth" });
+      }
     }
   };
   const [form, setForm] = useState({
@@ -414,22 +416,13 @@ export default function Home() {
                   </ul>
                 </div>
         
-                <div
-                  className="no-print"
-                  style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12, marginTop: 8 }}
-                >
-                  <button
-                    onClick={() => {
-                      setResultPage("products");
-                      window.scrollTo({ top: 0, behavior: "smooth" });
-                    }}
-                    style={darkButtonStyle}
-                  >
-                    영양제 추천
-                  </button>
-        
+                <div className="no-print" style={actionBarStyle}>
                   <button onClick={goBack} style={secondaryButtonStyle}>
                     ← 뒤로
+                  </button>
+                
+                  <button onClick={goToProducts} style={darkButtonStyle}>
+                    영양제 추천 →
                   </button>
                 </div>
               </>
@@ -514,15 +507,13 @@ export default function Home() {
                   </div>
                 ))}
         
-                <div
-                  className="no-print"
-                  style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12, marginBottom: 14 }}
-                >
+                <div className="no-print" style={actionBarStyle}>
                   <button onClick={goBack} style={secondaryButtonStyle}>
                     ← 뒤로
                   </button>
+                
                   <button onClick={exportPdf} style={darkButtonStyle}>
-                    PDF 리포트 다운로드
+                    PDF 다운로드
                   </button>
                 </div>
               </>
@@ -901,7 +892,6 @@ const summaryCardStyle = {
 
 const topSummaryGridStyle = {
   display: "grid",
-  gridTemplateColumns: "1fr 1fr",
   gap: 16,
   marginBottom: 18,
 };
@@ -932,4 +922,20 @@ const scoreTrackStyle = {
   background: "#e5e7eb",
   borderRadius: 999,
   overflow: "hidden",
+};
+
+const actionBarStyle = {
+  position: "sticky",
+  bottom: 12,
+  display: "flex",
+  justifyContent: "space-between",
+  alignItems: "center",
+  gap: 10,
+  padding: 12,
+  background: "rgba(255,255,255,0.95)",
+  backdropFilter: "blur(8px)",
+  border: "1px solid #e5e7eb",
+  borderRadius: 16,
+  boxShadow: "0 8px 20px rgba(0,0,0,0.08)",
+  zIndex: 20,
 };
