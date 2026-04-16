@@ -36,9 +36,24 @@ def sample_products(query: str):
         }
     ]
 
-
+def build_search_query(query: str):
+    query_map = {
+        "비타민D": "비타민D 2000IU 성인 영양제",
+        "오메가3": "rTG 오메가3 성인 영양제",
+        "마그네슘": "마그네슘 글리시네이트 성인 영양제",
+        "비타민B군": "비타민B 컴플렉스 성인 영양제",
+        "칼슘": "칼슘 마그네슘 비타민D 영양제",
+        "철분": "철분 성인 영양제",
+        "엽산": "엽산 성인 영양제",
+        "비타민B12": "비타민B12 성인 영양제",
+        "비타민C": "비타민C 1000 성인 영양제",
+        "아연": "아연 성인 영양제",
+        "멀티비타민": "종합비타민 성인 영양제",
+    }
+    return query_map.get(query, f"{query} 성인 영양제")
+    
 def search_naver_products(query: str):
-    search_query = f"{query} 영양제"
+    search_query = build_search_query(query)
 
     print(f"[NAVER] query={search_query}")
     print(f"[NAVER] USE_NAVER_API={USE_NAVER_API}")
@@ -59,9 +74,10 @@ def search_naver_products(query: str):
         "X-Naver-Client-Secret": NAVER_CLIENT_SECRET,
     }
     params = {
-        "query": search_query,
-        "display": 3,
-        "sort": "sim"
+    "query": search_query,
+    "display": 5,
+    "sort": "sim",
+    "exclude": "used:rental:cbshop"
     }
 
     try:
